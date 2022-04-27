@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "vortex"
-version = "0.1.0"
+name = "itslive"
+version = "0.1.1"
 description = "Python client for ITSLIVE gralcier velocity data"
 authors = ["betolink <luis.lopez@nsidc.org>"]
 license = "GNUL V3"
@@ -22,9 +22,9 @@ isort = "^5.10.1"
 flake8 = "^4.0.1"
 autoflake8 = "^0.3.2"
 mkdocs = "^1.3.0"
-mkdocs-material = "^8.2.11"
+mkdocs-material = ">=7.1,<9.0"
 mkdocstrings = "^0.18.1"
-pymdown-extensions = "^9.4"
+pymdown-extensions = "^9.2"
 jupyterlab = "^3.3.4"
 
 [build-system]
