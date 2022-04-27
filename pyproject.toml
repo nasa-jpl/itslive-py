@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "vortex"
+name = "itslive"
 version = "0.1.0"
 description = "Python client for ITSLIVE gralcier velocity data"
 authors = ["betolink <luis.lopez@nsidc.org>"]
