@@ -3,7 +3,9 @@ channels:
   - conda-forge
 dependencies:
   - python=3.9.*
-  - itslive
   - ipyleaflet
   - geopandas
   - matplotlib-base
+  - pip
+  - pip:
+    - itslive
