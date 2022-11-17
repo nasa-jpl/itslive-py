@@ -1,10 +1,9 @@
-name: vortex_env
+name: itslive_vortex
 channels:
   - conda-forge
 dependencies:
   - python=3.9.*
-  - mamba
-  - pip
-  - pip:
-    - pynvim
-    - "poetry>=1.2"
+  - itslive
+  - ipyleaflet
+  - geopandas
+  - matplotlib-base

@@ -419,6 +419,14 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
+name = "et-xmlfile"
+version = "1.1.0"
+description = "An implementation of lxml.xmlfile for the standard library"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[[package]]
 name = "exceptiongroup"
 version = "1.0.4"
 description = "Backport of PEP 654 (exception groups)"
@@ -532,6 +540,17 @@ sftp = ["paramiko"]
 smb = ["smbprotocol"]
 ssh = ["paramiko"]
 tqdm = ["tqdm"]
+
+[[package]]
+name = "ftfy"
+version = "6.1.1"
+description = "Fixes mojibake and other problems with Unicode, after the fact"
+category = "main"
+optional = false
+python-versions = ">=3.7,<4"
+
+[package.dependencies]
+wcwidth = ">=0.2.5"
 
 [[package]]
 name = "ghp-import"
@@ -861,6 +880,14 @@ description = "A fast and thorough lazy object proxy."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
+
+[[package]]
+name = "mailchecker"
+version = "5.0.3"
+description = "Cross-language email validation. Backed by a database of thousands throwable email providers."
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "markdown"
@@ -1245,6 +1272,17 @@ optional = false
 python-versions = ">=3.8"
 
 [[package]]
+name = "openpyxl"
+version = "3.0.10"
+description = "A Python library to read/write Excel 2010 xlsx/xlsm files"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+et-xmlfile = "*"
+
+[[package]]
 name = "packaging"
 version = "21.3"
 description = "Core utilities for Python packages"
@@ -1312,6 +1350,14 @@ python-versions = "*"
 
 [package.dependencies]
 ptyprocess = ">=0.5"
+
+[[package]]
+name = "phonenumbers"
+version = "8.13.0"
+description = "Python version of Google's common library for parsing, formatting, storing and validating international phone numbers."
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "pickleshare"
@@ -1559,6 +1605,28 @@ pytest = ">=2.6.4"
 watchdog = ">=0.6.0"
 
 [[package]]
+name = "python-benedict"
+version = "0.26.0"
+description = "python-benedict is a dict subclass with keylist/keypath support, normalized I/O operations (base64, csv, ini, json, pickle, plist, query-string, toml, xls, xml, yaml) and many utilities... for humans, obviously."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+ftfy = ">=6.0.0,<7.0.0"
+mailchecker = ">=4.1.0,<6.0.0"
+openpyxl = ">=3.0.0,<4.0.0"
+phonenumbers = ">=8.12.0,<9.0.0"
+python-dateutil = ">=2.8.0,<3.0.0"
+python-fsutil = ">=0.6.0,<1.0.0"
+python-slugify = ">=6.0.1,<7.0.0"
+pyyaml = ">=6.0,<7.0"
+requests = ">=2.26.0,<3.0.0"
+toml = ">=0.10.2,<1.0.0"
+xlrd = ">=2.0.0,<3.0.0"
+xmltodict = ">=0.12.0,<1.0.0"
+
+[[package]]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
@@ -1568,6 +1636,28 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 
 [package.dependencies]
 six = ">=1.5"
+
+[[package]]
+name = "python-fsutil"
+version = "0.7.0"
+description = "file-system utilities for lazy devs."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "python-slugify"
+version = "6.1.2"
+description = "A Python slugify application that also handles Unicode"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
+
+[package.dependencies]
+text-unidecode = ">=1.3"
+
+[package.extras]
+unidecode = ["Unidecode (>=1.1.1)"]
 
 [[package]]
 name = "pytz"
@@ -1597,7 +1687,7 @@ python-versions = ">=3.7"
 name = "pyyaml"
 version = "6.0"
 description = "YAML parser and emitter for Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -1628,7 +1718,7 @@ py = {version = "*", markers = "implementation_name == \"pypy\""}
 name = "requests"
 version = "2.28.1"
 description = "Python HTTP for Humans."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7, <4"
 
@@ -1693,7 +1783,7 @@ boto3 = ["aiobotocore[boto3] (>=2.4.0,<2.5.0)"]
 
 [[package]]
 name = "scalene"
-version = "1.5.14"
+version = "1.5.15"
 description = "Scalene: A high-resolution, low-overhead CPU, GPU, and memory profiler for Python"
 category = "dev"
 optional = false
@@ -1701,8 +1791,10 @@ python-versions = ">=3.8"
 
 [package.dependencies]
 cloudpickle = ">=1.5.0"
+Jinja2 = ">=3.0.3"
 pynvml = ">=11.0.0"
 rich = ">=9.2.0"
+wheel = ">=0.36.1"
 
 [[package]]
 name = "send2trash"
@@ -1819,6 +1911,14 @@ docs = ["pydata-sphinx-theme", "sphinx"]
 test = ["pre-commit", "pytest (>=7.0)", "pytest-timeout"]
 
 [[package]]
+name = "text-unidecode"
+version = "1.3"
+description = "The most basic Text::Unidecode port"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "tinycss2"
 version = "1.2.1"
 description = "A tiny CSS parser"
@@ -1837,7 +1937,7 @@ test = ["flake8", "isort", "pytest"]
 name = "toml"
 version = "0.10.2"
 description = "Python Library for Tom's Obvious, Minimal Language"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
@@ -1921,7 +2021,7 @@ watchmedo = ["PyYAML (>=3.10)"]
 name = "wcwidth"
 version = "0.2.5"
 description = "Measures the displayed width of unicode strings in a terminal"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -1945,6 +2045,17 @@ python-versions = ">=3.7"
 docs = ["Sphinx (>=3.4)", "sphinx-rtd-theme (>=0.5)"]
 optional = ["python-socks", "wsaccel"]
 test = ["websockets"]
+
+[[package]]
+name = "wheel"
+version = "0.38.4"
+description = "A built-package format for Python"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+test = ["pytest (>=3.0.0)"]
 
 [[package]]
 name = "wrapt"
@@ -1974,6 +2085,27 @@ docs = ["bottleneck", "cfgrib", "cftime", "dask[complete]", "flox", "fsspec", "h
 io = ["cfgrib", "cftime", "fsspec", "h5netcdf", "netCDF4", "pooch", "pydap", "rasterio", "scipy", "zarr"]
 parallel = ["dask[complete]"]
 viz = ["matplotlib", "nc-time-axis", "seaborn"]
+
+[[package]]
+name = "xlrd"
+version = "2.0.1"
+description = "Library for developers to extract data from Microsoft Excel (tm) .xls spreadsheet files"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
+
+[package.extras]
+build = ["twine", "wheel"]
+docs = ["sphinx"]
+test = ["pytest", "pytest-cov"]
+
+[[package]]
+name = "xmltodict"
+version = "0.13.0"
+description = "Makes working with XML feel like you are working with JSON"
+category = "main"
+optional = false
+python-versions = ">=3.4"
 
 [[package]]
 name = "yarl"
@@ -2019,7 +2151,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "2aa27b3a71bee1ece80cfba9dbd50443885b8f8dcacb954bf452ce66d136534b"
+content-hash = "4e005a35f3a1f83ec9e1c77f1b8b9629eb72bcfcb4293bfabb4e57b8f5ce762e"
 
 [metadata.files]
 aiobotocore = [
@@ -2428,6 +2560,10 @@ entrypoints = [
     {file = "entrypoints-0.4-py3-none-any.whl", hash = "sha256:f174b5ff827504fd3cd97cc3f8649f3693f51538c7e4bdf3ef002c8429d42f9f"},
     {file = "entrypoints-0.4.tar.gz", hash = "sha256:b706eddaa9218a19ebcd67b56818f05bb27589b1ca9e8d797b74affad4ccacd4"},
 ]
+et-xmlfile = [
+    {file = "et_xmlfile-1.1.0-py3-none-any.whl", hash = "sha256:a2ba85d1d6a74ef63837eed693bcb89c3f752169b0e3e7ae5b16ca5e1b3deada"},
+    {file = "et_xmlfile-1.1.0.tar.gz", hash = "sha256:8eb9e2bc2f8c97e37a2dc85a09ecdcdec9d8a396530a6d5a33b30b9a92da0c5c"},
+]
 exceptiongroup = [
     {file = "exceptiongroup-1.0.4-py3-none-any.whl", hash = "sha256:542adf9dea4055530d6e1279602fa5cb11dab2395fa650b8674eaec35fc4a828"},
     {file = "exceptiongroup-1.0.4.tar.gz", hash = "sha256:bd14967b79cd9bdb54d97323216f8fdf533e278df937aa2a90089e7d6e06e5ec"},
@@ -2531,6 +2667,10 @@ frozenlist = [
 fsspec = [
     {file = "fsspec-2022.11.0-py3-none-any.whl", hash = "sha256:d6e462003e3dcdcb8c7aa84c73a228f8227e72453cd22570e2363e8844edfe7b"},
     {file = "fsspec-2022.11.0.tar.gz", hash = "sha256:259d5fd5c8e756ff2ea72f42e7613c32667dc2049a4ac3d84364a7ca034acb8b"},
+]
+ftfy = [
+    {file = "ftfy-6.1.1-py3-none-any.whl", hash = "sha256:0ffd33fce16b54cccaec78d6ec73d95ad370e5df5a25255c8966a6147bd667ca"},
+    {file = "ftfy-6.1.1.tar.gz", hash = "sha256:bfc2019f84fcd851419152320a6375604a0f1459c281b5b199b2cd0d2e727f8f"},
 ]
 ghp-import = [
     {file = "ghp-import-2.1.0.tar.gz", hash = "sha256:9c535c4c61193c2df8871222567d7fd7e5014d835f97dc7b7439069e2413d343"},
@@ -2698,6 +2838,9 @@ lazy-object-proxy = [
     {file = "lazy_object_proxy-1.8.0-pp37-pypy37_pp73-any.whl", hash = "sha256:ae032743794fba4d171b5b67310d69176287b5bf82a21f588282406a79498891"},
     {file = "lazy_object_proxy-1.8.0-pp38-pypy38_pp73-any.whl", hash = "sha256:7e1561626c49cb394268edd00501b289053a652ed762c58e1081224c8d881cec"},
     {file = "lazy_object_proxy-1.8.0-pp39-pypy39_pp73-any.whl", hash = "sha256:ce58b2b3734c73e68f0e30e4e725264d4d6be95818ec0a0be4bb6bf9a7e79aa8"},
+]
+mailchecker = [
+    {file = "mailchecker-5.0.3.tar.gz", hash = "sha256:0fcc725c150345a5cb7a6a5c27b1bf61b7bb03716201a67c9209b88e02a19122"},
 ]
 markdown = [
     {file = "Markdown-3.3.7-py3-none-any.whl", hash = "sha256:f5da449a6e1c989a4cea2631aa8ee67caa5a2ef855d551c88f9e309f4634c621"},
@@ -2998,6 +3141,10 @@ numpy = [
     {file = "numpy-1.23.4-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:4d52914c88b4930dafb6c48ba5115a96cbab40f45740239d9f4159c4ba779962"},
     {file = "numpy-1.23.4.tar.gz", hash = "sha256:ed2cc92af0efad20198638c69bb0fc2870a58dabfba6eb722c933b48556c686c"},
 ]
+openpyxl = [
+    {file = "openpyxl-3.0.10-py2.py3-none-any.whl", hash = "sha256:0ab6d25d01799f97a9464630abacbb34aafecdcaa0ef3cba6d6b3499867d0355"},
+    {file = "openpyxl-3.0.10.tar.gz", hash = "sha256:e47805627aebcf860edb4edf7987b1309c1b3632f3750538ed962bbcc3bd7449"},
+]
 packaging = [
     {file = "packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},
     {file = "packaging-21.3.tar.gz", hash = "sha256:dd47c42927d89ab911e606518907cc2d3a1f38bbd026385970643f9c5b8ecfeb"},
@@ -3046,6 +3193,10 @@ pathspec = [
 pexpect = [
     {file = "pexpect-4.8.0-py2.py3-none-any.whl", hash = "sha256:0b48a55dcb3c05f3329815901ea4fc1537514d6ba867a152b581d69ae3710937"},
     {file = "pexpect-4.8.0.tar.gz", hash = "sha256:fc65a43959d153d0114afe13997d439c22823a27cefceb5ff35c2178c6784c0c"},
+]
+phonenumbers = [
+    {file = "phonenumbers-8.13.0-py2.py3-none-any.whl", hash = "sha256:dbaea9e4005a976bcf18fbe2bb87cb9cd0a3f119136f04188ac412d7741cebf0"},
+    {file = "phonenumbers-8.13.0.tar.gz", hash = "sha256:93745d7afd38e246660bb601b07deac54eeb76c8e5e43f5e83333b0383a0a1e4"},
 ]
 pickleshare = [
     {file = "pickleshare-0.7.5-py2.py3-none-any.whl", hash = "sha256:9649af414d74d4df115d5d718f82acb59c9d418196b7b4290ed47a12ce62df56"},
@@ -3253,9 +3404,21 @@ pytest = [
 pytest-watch = [
     {file = "pytest-watch-4.2.0.tar.gz", hash = "sha256:06136f03d5b361718b8d0d234042f7b2f203910d8568f63df2f866b547b3d4b9"},
 ]
+python-benedict = [
+    {file = "python-benedict-0.26.0.tar.gz", hash = "sha256:afc4e5a0925f498e2d4040483810403acb0383edac99c13ee3039cf2bbef37a5"},
+    {file = "python_benedict-0.26.0-py3-none-any.whl", hash = "sha256:d01bfb2823d8041aa911381656d6db96e6656c4a36a62066ffadcbc2bf687a98"},
+]
 python-dateutil = [
     {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
     {file = "python_dateutil-2.8.2-py2.py3-none-any.whl", hash = "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"},
+]
+python-fsutil = [
+    {file = "python-fsutil-0.7.0.tar.gz", hash = "sha256:f46fe8c26d930cf9fb1816d9881407666ca1f805bb795b2d7d5da0795cb32b0c"},
+    {file = "python_fsutil-0.7.0-py3-none-any.whl", hash = "sha256:5adee65b1b991275604c7dc9e37d0a03d0be512ac083bfc8a2c350706901e398"},
+]
+python-slugify = [
+    {file = "python-slugify-6.1.2.tar.gz", hash = "sha256:272d106cb31ab99b3496ba085e3fea0e9e76dcde967b5e9992500d1f785ce4e1"},
+    {file = "python_slugify-6.1.2-py2.py3-none-any.whl", hash = "sha256:7b2c274c308b62f4269a9ba701aa69a797e9bca41aeee5b3a9e79e36b6656927"},
 ]
 pytz = [
     {file = "pytz-2022.6-py2.py3-none-any.whl", hash = "sha256:222439474e9c98fced559f1709d89e6c9cbf8d79c794ff3eb9f8800064291427"},
@@ -3424,17 +3587,18 @@ s3fs = [
     {file = "s3fs-2022.11.0.tar.gz", hash = "sha256:10c5ac283a4f5b67ffad6d1f25ff7ee026142750c5c5dc868746cd904f617c33"},
 ]
 scalene = [
-    {file = "scalene-1.5.14-cp310-cp310-macosx_10_15_universal2.whl", hash = "sha256:c9c122158a53d04231cab3dd45af2ba368aca2c8f5e14bf5e203355856005b70"},
-    {file = "scalene-1.5.14-cp310-cp310-manylinux_2_24_x86_64.whl", hash = "sha256:8b84f9b21ee2bfba64998da1581abd7021a6456e9719c5890e1708d390bb0995"},
-    {file = "scalene-1.5.14-cp310-cp310-win_amd64.whl", hash = "sha256:2e12c80d9a9e6601648ce8e9db7f9fe632003997196630c68851d4e8b72710f9"},
-    {file = "scalene-1.5.14-cp37-cp37m-macosx_10_15_universal2.whl", hash = "sha256:1801a1031e1303ec58a3e315fdb89fb559f02bbf79345e07c7369dc94daa2ac4"},
-    {file = "scalene-1.5.14-cp37-cp37m-manylinux_2_24_x86_64.whl", hash = "sha256:30242d4955998aee1a82c0d9a73ccdd2aa15d447cdc91bc6ec3b52abf87fe54e"},
-    {file = "scalene-1.5.14-cp38-cp38-macosx_10_15_universal2.whl", hash = "sha256:adf5c573c5025acfb84f709b11bb0a4d31ebdb7309c3904c36bc654115a11147"},
-    {file = "scalene-1.5.14-cp38-cp38-manylinux_2_24_x86_64.whl", hash = "sha256:8da7fdd4a816d9c0a701e4036e8274fd9c3cb7baa8488cd3978cfb83c29bb053"},
-    {file = "scalene-1.5.14-cp38-cp38-win_amd64.whl", hash = "sha256:4736133b90a1168becd09f743119c232df43b5c9081dbe5ce6da6fcec203b89c"},
-    {file = "scalene-1.5.14-cp39-cp39-manylinux_2_24_x86_64.whl", hash = "sha256:a3d0fb20b5a4bb66fae8c46b5436567aea4bb0f0867a10b3338db00a516da574"},
-    {file = "scalene-1.5.14-cp39-cp39-win_amd64.whl", hash = "sha256:c6b02b3fd20111373e5af7f858e8c9e2294612cc9ef759cd83163195ef52b974"},
-    {file = "scalene-1.5.14.tar.gz", hash = "sha256:51ce9a83e46f1879fd9782feb459b3279133c00ff45b2b34e93c45ca3f4b3783"},
+    {file = "scalene-1.5.15-cp310-cp310-macosx_10_15_universal2.whl", hash = "sha256:fe7b5cbb36127510ea9860a5a2faf55c26a603773c8ab4a58867ff945ea18316"},
+    {file = "scalene-1.5.15-cp310-cp310-manylinux_2_24_x86_64.whl", hash = "sha256:29847c70a6af5c7d31ed5ba4ccf53138137183d26e25a50c050860d05537cd8a"},
+    {file = "scalene-1.5.15-cp310-cp310-win_amd64.whl", hash = "sha256:fa7dee3a6ee6d06c0606e30a388df4ec07d2e60787e59b96bed5cdb74c9aa511"},
+    {file = "scalene-1.5.15-cp37-cp37m-macosx_10_15_universal2.whl", hash = "sha256:3c12e12c144eeedc95bdfd37a40b85cc22ddb20210c605731ff0b35f1c365d15"},
+    {file = "scalene-1.5.15-cp37-cp37m-manylinux_2_24_x86_64.whl", hash = "sha256:ae77d2a7cb37b1b6ce0b800ca4309652abf949dc52c9e843fd078936b334e502"},
+    {file = "scalene-1.5.15-cp38-cp38-macosx_10_15_universal2.whl", hash = "sha256:ace30828a91b99c0c82782fd8b69f1ab9a9bb473be19d8724cf5eb334f0102d5"},
+    {file = "scalene-1.5.15-cp38-cp38-manylinux_2_24_x86_64.whl", hash = "sha256:f90f55ba7443d20d7ba3fde17de19533b4822b80e595a5037196eba6032c5f59"},
+    {file = "scalene-1.5.15-cp38-cp38-win_amd64.whl", hash = "sha256:716dcac69e25748909b3c532544375aa9ecb21ead411b99712489fc75000d9ae"},
+    {file = "scalene-1.5.15-cp39-cp39-macosx_10_15_universal2.whl", hash = "sha256:d4b71a8671d8856ae1fa54ded79875b44a9f5b7ba4c8dc13921be7cb560f283f"},
+    {file = "scalene-1.5.15-cp39-cp39-manylinux_2_24_x86_64.whl", hash = "sha256:aea8e6c7aeecacc10fafe8c4bf2f79ce2f9733d96b2330b9f6b6c36f3e3b0dca"},
+    {file = "scalene-1.5.15-cp39-cp39-win_amd64.whl", hash = "sha256:f5be6865d56e025f551886fd1768548b156696d6022d87ba1f11c4995266ba48"},
+    {file = "scalene-1.5.15.tar.gz", hash = "sha256:03b5bc4c053bbad21e061dbccdb6bae9841962761726486f33b58c7e436e2425"},
 ]
 send2trash = [
     {file = "Send2Trash-1.8.0-py3-none-any.whl", hash = "sha256:f20eaadfdb517eaca5ce077640cb261c7d2698385a6a0f072a4a5447fd49fa08"},
@@ -3508,6 +3672,10 @@ stack-data = [
 terminado = [
     {file = "terminado-0.17.0-py3-none-any.whl", hash = "sha256:bf6fe52accd06d0661d7611cc73202121ec6ee51e46d8185d489ac074ca457c2"},
     {file = "terminado-0.17.0.tar.gz", hash = "sha256:520feaa3aeab8ad64a69ca779be54be9234edb2d0d6567e76c93c2c9a4e6e43f"},
+]
+text-unidecode = [
+    {file = "text-unidecode-1.3.tar.gz", hash = "sha256:bad6603bb14d279193107714b288be206cac565dfa49aa5b105294dd5c4aab93"},
+    {file = "text_unidecode-1.3-py2.py3-none-any.whl", hash = "sha256:1311f10e8b895935241623731c2ba64f4c455287888b18189350b67134a822e8"},
 ]
 tinycss2 = [
     {file = "tinycss2-1.2.1-py3-none-any.whl", hash = "sha256:2b80a96d41e7c3914b8cda8bc7f705a4d9c49275616e886103dd839dfc847847"},
@@ -3593,6 +3761,10 @@ websocket-client = [
     {file = "websocket-client-1.4.2.tar.gz", hash = "sha256:d6e8f90ca8e2dd4e8027c4561adeb9456b54044312dba655e7cae652ceb9ae59"},
     {file = "websocket_client-1.4.2-py3-none-any.whl", hash = "sha256:d6b06432f184438d99ac1f456eaf22fe1ade524c3dd16e661142dc54e9cba574"},
 ]
+wheel = [
+    {file = "wheel-0.38.4-py3-none-any.whl", hash = "sha256:b60533f3f5d530e971d6737ca6d58681ee434818fab630c83a734bb10c083ce8"},
+    {file = "wheel-0.38.4.tar.gz", hash = "sha256:965f5259b566725405b05e7cf774052044b1ed30119b5d586b2703aafe8719ac"},
+]
 wrapt = [
     {file = "wrapt-1.14.1-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:1b376b3f4896e7930f1f772ac4b064ac12598d1c38d04907e696cc4d794b43d3"},
     {file = "wrapt-1.14.1-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:903500616422a40a98a5a3c4ff4ed9d0066f3b4c951fa286018ecdf0750194ef"},
@@ -3662,6 +3834,14 @@ wrapt = [
 xarray = [
     {file = "xarray-2022.11.0-py3-none-any.whl", hash = "sha256:228ed50ab3f1f7e2ba66670ded05f0bee46c69c4f902f346947b5723479af97f"},
     {file = "xarray-2022.11.0.tar.gz", hash = "sha256:3008a302877f87a0f9043b1f01a4ad4e85b668bbdd38d488764098624632f527"},
+]
+xlrd = [
+    {file = "xlrd-2.0.1-py2.py3-none-any.whl", hash = "sha256:6a33ee89877bd9abc1158129f6e94be74e2679636b8a205b43b85206c3f0bbdd"},
+    {file = "xlrd-2.0.1.tar.gz", hash = "sha256:f72f148f54442c6b056bf931dbc34f986fd0c3b0b6b5a58d013c9aef274d0c88"},
+]
+xmltodict = [
+    {file = "xmltodict-0.13.0-py2.py3-none-any.whl", hash = "sha256:aa89e8fd76320154a40d19a0df04a4695fb9dc5ba977cbb68ab3e4eb225e7852"},
+    {file = "xmltodict-0.13.0.tar.gz", hash = "sha256:341595a488e3e01a85a9d8911d8912fd922ede5fecc4dce437eb4b6c8d037e56"},
 ]
 yarl = [
     {file = "yarl-1.8.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:abc06b97407868ef38f3d172762f4069323de52f2b70d133d096a48d72215d28"},

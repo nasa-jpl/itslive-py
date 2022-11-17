@@ -1,5 +1,6 @@
 import logging
 
+import itslive
 import pytest
 import xarray as xr
 from itslive import cubes
@@ -31,6 +32,10 @@ invalid_lat_lons = [
     (0.0, 0.0),
     (33.5, 190.2),
 ]
+
+
+def test_we_can_verify_version():
+    assert type(itslive.__version__) is str
 
 
 def test_load_default_cube():

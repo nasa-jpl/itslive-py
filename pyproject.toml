@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "pylive"
-homepage = "https://github.com/nasa-jpl/pylive"
+name = "itslive"
+homepage = "https://github.com/nasa-jpl/itslive-vortex"
 version = "0.1.2"
 description = "Python client for ITSLIVE gralcier velocity data"
 authors = ["betolink <luis.lopez@nsidc.org>"]
@@ -15,6 +15,7 @@ Shapely = ">=1.8"
 pyproj = ">=3.3"
 matplotlib = ">=3.5"
 multimethod = ">=1.8"
+python-benedict = ">=0.25"
 
 [tool.poetry.dev-dependencies]
 black = ">=22.3.0"

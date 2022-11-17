@@ -1,6 +1,7 @@
 import requests
 
+_API_ENDPOINT = "https://nsidc.org/apps/itslive-search/velocities/"
 
-class Pairs:
-    def __init__(self):
-        self.API_ENDPOINT = "https://nsidc.org/apps/itslive-search/velocities/"
+
+def find():
+    return None

@@ -6,6 +6,7 @@ import pyproj
 import requests
 # for datacube xarray/zarr access
 import xarray as xr
+from benedict import benedict
 from shapely import geometry
 
 
@@ -38,8 +39,8 @@ def _get_projected_xy_point(lon: float, lat: float, projection: str) -> geometry
 def find(
     points: List[tuple[float, float]],
 ) -> List[Dict[str, Any]]:
-    """Find geojeson entries matching a geometry, if 2 values are passed
-    it will use the point geometry, if 3 or more values are passed it will use
+    """Find the zarr cube information for a given geometry, if 2 values are passed
+    it will use the point geometry, if 3 or more values are passed it will
     search using a polygon.
 
     :param first:
@@ -178,6 +179,8 @@ def get_time_series(
             time_series = xr_da[variables].sel(
                 x=projected_point.x, y=projected_point.y, method="nearest"
             )
-            velocity_ts.append({"coordinates": (lon, lat), "time_series": time_series})
+            velocity_ts.append(
+                benedict({"coordinates": (lon, lat), "time_series": time_series})
+            )
 
     return velocity_ts
