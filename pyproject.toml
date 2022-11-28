@@ -14,8 +14,10 @@ xarray = ">=2022.3"
 Shapely = ">=1.8"
 pyproj = ">=3.3"
 matplotlib = ">=3.5"
-multimethod = ">=1.8"
-python-benedict = ">=0.25"
+rich-click = ">=1.5"
+plotext=">=0"
+tabulate = ">=0.9.0"
+pandas = "1.5.1"
 
 [tool.poetry.dev-dependencies]
 black = ">=22.3.0"
@@ -33,6 +35,10 @@ jupyterlab = ">=3.3"
 scalene = ">=1.5.14"
 responses = ">=0.22.0"
 mypy = "^0.991"
+
+
+[tool.poetry.scripts]
+itslive-export = "itslive.cli_export:cli"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -1,12 +1,15 @@
 # to get and use geojson datacube catalog
 # for timing data access
+from pathlib import Path
 from typing import Any, Dict, List
+from uuid import uuid4
 
 import pyproj
 import requests
 # for datacube xarray/zarr access
 import xarray as xr
-from benedict import benedict
+from rich import print as rprint
+from rich.progress import track
 from shapely import geometry
 
 
@@ -15,17 +18,16 @@ class timeseriesException(Exception):
     pass
 
 
-# TODO: The find functions are somewhat inneficcient, we are doing a full scan when
-# we could be using an r-tree.
-
-
-CATALOG_URL = "https://its-live-data.s3.amazonaws.com/datacubes/catalog_v02.json"
+DEFAULT_CATALOG_URL = (
+    "https://its-live-data.s3.amazonaws.com/datacubes/catalog_v02.json"
+)
 
 
 # keep track of open cubes so that we don't re-read xarray metadata
 # and dimension vectors
 _open_cubes = {}
-_catalog = requests.get(CATALOG_URL).json()
+_catalog = requests.get(DEFAULT_CATALOG_URL).json()
+_current_catalog_url = DEFAULT_CATALOG_URL
 
 
 def _get_projected_xy_point(lon: float, lat: float, projection: str) -> geometry.Point:
@@ -66,7 +68,8 @@ def load_catalog(
     if url is not provided will load the default location on S3
     """
     try:
-        _catalog = requests.get(url).json()
+        _current_catalog_url = url
+        _catalog = requests.get(_current_catalog_url).json()
     except Exception:
         raise Exception
     return _catalog
@@ -179,8 +182,187 @@ def get_time_series(
             time_series = xr_da[variables].sel(
                 x=projected_point.x, y=projected_point.y, method="nearest"
             )
-            velocity_ts.append(
-                benedict({"coordinates": (lon, lat), "time_series": time_series})
-            )
+            if time_series is not None and isinstance(time_series, xr.Dataset):
+                velocity_ts.append(
+                    {"coordinates": (lon, lat), "time_series": time_series}
+                )
 
     return velocity_ts
+
+
+def export_csv(
+    points: List[tuple[float, float]],
+    variables: List[str] = ["v"],
+    outdir: str = f"./itslive-{uuid4()}",
+) -> None:
+    """Exports a list of ITS_LIVE glacier velocity variables to csv files"""
+
+    _default_variables = [
+        "v",
+        "v_error",
+        "vx",
+        "vx_error",
+        "vy",
+        "vy_error",
+        "date_dt",
+        "satellite_img1",
+        "mission_img1",
+    ]
+
+    query_variables = set(_default_variables)
+    query_variables.update(variables)
+
+    Path(outdir).mkdir(parents=True, exist_ok=True)
+
+    for point in track(
+        points,
+        description=f"Processing {len(points)} coordinates...",
+        total=len(points),
+    ):
+
+        lon = round(point[0], 4)
+        lat = round(point[1], 4)
+        result_series = get_time_series([(lon, lat)], query_variables)
+        if len(result_series):
+            series = result_series[0]["time_series"]
+
+            df = series.to_dataframe()
+            df["x"] = lon
+            df["y"] = lat
+            df = df.rename(
+                columns={
+                    "x": "lon",
+                    "y": "lat",
+                    "satellite_img1": "satellite",
+                    "mission_img1": "mission",
+                    "v": "v [m/yr]",
+                    "v_error": "v_error [m/yr]",
+                    "vx": "vx [m/yr]",
+                    "vx_error": "vx_error [m/yr]",
+                    "vy": "vy [m/yr]",
+                    "vy_error": "vy_error [m/yr]",
+                }
+            )
+            df["epsg"] = series.attrs["projection"]
+            df["date_dt [days]"] = df["date_dt"].dt.days
+            ts = df.dropna()
+            file_name = f"LON{lon}--LAT{lat}.csv"
+            ts.to_csv(
+                f"{outdir}/{file_name}",
+                columns=[
+                    "lon",
+                    "lat",
+                    "v [m/yr]",
+                    "v_error [m/yr]",
+                    "vx [m/yr]",
+                    "vx_error [m/yr]",
+                    "vy [m/yr]",
+                    "vy_error [m/yr]",
+                    "date_dt [days]",
+                    "mission",
+                    "satellite",
+                    "epsg",
+                ],
+            )
+        else:
+            rprint(f"[red on black]No data found at[/] lon: {lon}, lat: {lat}")
+
+
+def export_netcdf(
+    points: List[tuple[float, float]],
+    variables: List[str] = ["v"],
+    outdir: str = f"./itslive-{uuid4()}",
+) -> None:
+    """Exports a list of ITS_LIVE glacier velocity variables to netcdf files"""
+
+    _default_variables = [
+        "v",
+        "v_error",
+        "vx",
+        "vx_error",
+        "vy",
+        "vy_error",
+        "date_dt",
+        "satellite_img1",
+        "mission_img1",
+    ]
+
+    query_variables = set(_default_variables)
+    query_variables.update(variables)
+    Path(outdir).mkdir(parents=True, exist_ok=True)
+
+    for point in track(
+        points,
+        description=f"Processing {len(points)} coordinates...",
+        total=len(points),
+    ):
+
+        lon = round(point[0], 4)
+        lat = round(point[1], 4)
+
+        file_name = f"LON{lon}--LAT{lat}"
+        result_series = get_time_series([(lon, lat)], query_variables)
+        if len(result_series):
+            series = result_series[0]["time_series"]
+            series.to_netcdf(f"{outdir}/{file_name}.nc")
+        else:
+            rprint(f"[red on black]No data found at[/] lon:{lon}, lat: {lat}")
+
+
+def export_stdout(
+    points: List[tuple[float, float]],
+    variables: List[str] = ["v"],
+) -> None:
+    """Exports a list of ITS_LIVE glacier velocity variables to stdout"""
+
+    _default_variables = [
+        "v",
+        "v_error",
+        "vx",
+        "vx_error",
+        "vy",
+        "vy_error",
+        "date_dt",
+        "satellite_img1",
+        "mission_img1",
+    ]
+
+    query_variables = set(_default_variables)
+    query_variables.update(variables)
+
+    for point in track(
+        points,
+        description=f"Processing {len(points)} coordinates...",
+        total=len(points),
+    ):
+
+        lon = round(point[0], 4)
+        lat = round(point[1], 4)
+
+        result_series = get_time_series([(lon, lat)], query_variables)
+        if len(result_series):
+            series = result_series[0]["time_series"]
+            df = series.to_dataframe()
+            df["x"] = lon
+            df["y"] = lat
+            df = df.rename(
+                columns={
+                    "x": "lon",
+                    "y": "lat",
+                    "satellite_img1": "satellite",
+                    "mission_img1": "mission",
+                    "v": "v [m/yr]",
+                    "v_error": "v_error [m/yr]",
+                    "vx": "vx [m/yr]",
+                    "vx_error": "vx_error [m/yr]",
+                    "vy": "vy [m/yr]",
+                    "vy_error": "vy_error [m/yr]",
+                }
+            )
+            df["epsg"] = series.attrs["projection"]
+            df["date_dt [days]"] = df["date_dt"].dt.days
+            ts = df.dropna()
+            outstr = ts.to_markdown()
+            rprint(outstr)
+        else:
+            rprint(f"[red on black] No data found at [/] lon: {lon}, lat: {lat}")
