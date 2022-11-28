@@ -154,7 +154,8 @@ def cli(input_coordinates, lat, lon, variables, outdir, format, debug):
 
     if len(points) and format is not None:
         export_time_series(points, variables, format, outdir)
-    rprint(" At least one set of coordinates are needed, --help")
+    else:
+        rprint(" At least one set of coordinates are needed, --help")
 
 
 if __name__ == "__main__":

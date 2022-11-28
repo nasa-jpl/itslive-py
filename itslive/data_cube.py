@@ -1,7 +1,7 @@
 # to get and use geojson datacube catalog
 # for timing data access
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 import pyproj
@@ -193,7 +193,7 @@ def get_time_series(
 def export_csv(
     points: List[tuple[float, float]],
     variables: List[str] = ["v"],
-    outdir: str = f"./itslive-{uuid4()}",
+    outdir: Optional[str] = None,
 ) -> None:
     """Exports a list of ITS_LIVE glacier velocity variables to csv files"""
 
@@ -208,6 +208,8 @@ def export_csv(
         "satellite_img1",
         "mission_img1",
     ]
+
+    outdir = f"./itslive-{uuid4()}" if outdir is None else outdir
 
     query_variables = set(_default_variables)
     query_variables.update(variables)
@@ -271,7 +273,7 @@ def export_csv(
 def export_netcdf(
     points: List[tuple[float, float]],
     variables: List[str] = ["v"],
-    outdir: str = f"./itslive-{uuid4()}",
+    outdir: Optional[str] = None,
 ) -> None:
     """Exports a list of ITS_LIVE glacier velocity variables to netcdf files"""
 
@@ -286,6 +288,8 @@ def export_netcdf(
         "satellite_img1",
         "mission_img1",
     ]
+
+    outdir = f"./itslive-{uuid4()}" if outdir is None else outdir
 
     query_variables = set(_default_variables)
     query_variables.update(variables)
