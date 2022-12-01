@@ -38,7 +38,8 @@ mypy = "^0.991"
 
 
 [tool.poetry.scripts]
-itslive-export = "itslive.cli_export:cli"
+itslive-export = "itslive.cli.export:export"
+itslive-plot = "itslive.cli.plot:plot"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

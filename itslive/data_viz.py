@@ -1,21 +1,24 @@
 from typing import List
 
 import plotext as plt
+import xarray as xr
 
 import itslive
 
 
-def plot_terminal(lon: float, lat: float, variable: str = "v") -> None:
+def plot_terminal(
+    lon: float, lat: float, dataset: xr.Dataset, variable: str = "v"
+) -> None:
     """Plots a variable from a given lon, lat in the terminal"""
     plt.date_form("Y-m-d")
     # the beauty of pandas + xarray
-    series = itslive.cubes.get_time_series([(lon, lat)])[0]
-    ts = series["time_series"][variable].to_pandas().dropna().sort_index()
+    ts = dataset[variable].to_pandas().dropna().sort_index()
     dates = [d.strftime("%Y-%m-%d") for d in ts.index.to_pydatetime()]
     # TODO: add stats on the graph, i.e. max, min, normalize date axis
+    values = [float(v[0]) for v in ts.values]
     plt.bar(
         dates,
-        ts.values,
+        values,
     )
     plt.show()
 

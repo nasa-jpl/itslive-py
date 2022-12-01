@@ -1,8 +1,7 @@
+import itslive
 import pandas as pd
 import rich_click as click
 from rich import print as rprint
-
-import itslive
 
 # Use Rich markup
 click.rich_click.USE_RICH_MARKUP = True
@@ -78,7 +77,25 @@ def export_time_series(points, variables, format, outdir):
     return None
 
 
+def plot_time_series(points, variable, label_by, outdir, stdout):
+    if stdout is not None:
+        # experimental
+        itslive.cubes._plot_time_series_terminal(points, variable)
+    else:
+        pass
+        # TODO: save plot on outdir
+        # plot = itslive.cubes.plot_time_series(points, variable, label_by)
+        # plot.save()
+    return None
+
+
 @click.command()
+@click.option(
+    "--itslive-catalog",
+    required=False,
+    default="https://its-live-data.s3.amazonaws.com/datacubes/catalog_v02.json",
+    help="GeoJSON catalog with the ITS_LIVE cube metadata",
+)
 @click.option(
     "--input-coordinates",
     required=False,
@@ -130,9 +147,11 @@ def export_time_series(points, variables, format, outdir):
 @click.option(
     "--debug",
     is_flag=True,
-    help="Enable :point_right: [yellow]debug mode[/] :point_left:",
+    help="Verbose output",
 )
-def cli(input_coordinates, lat, lon, variables, outdir, format, debug):
+def export(
+    itslive_catalog, input_coordinates, lat, lon, variables, outdir, format, debug
+):
     """
     ITS_LIVE Global Glacier Veolocity
 
@@ -141,6 +160,7 @@ def cli(input_coordinates, lat, lon, variables, outdir, format, debug):
     """
 
     points = []
+    itslive.cubes.load_catalog(itslive_catalog)
     if debug:
         rprint("Debug mode is [red]on[/]")
         rprint(f"Using: {itslive.cubes._current_catalog_url}")
@@ -156,7 +176,3 @@ def cli(input_coordinates, lat, lon, variables, outdir, format, debug):
         export_time_series(points, variables, format, outdir)
     else:
         rprint(" At least one set of coordinates are needed, --help")
-
-
-if __name__ == "__main__":
-    cli()

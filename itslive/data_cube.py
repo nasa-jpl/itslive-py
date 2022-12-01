@@ -12,6 +12,8 @@ from rich import print as rprint
 from rich.progress import track
 from shapely import geometry
 
+from .data_viz import plot_terminal, plot_variable
+
 
 # class to throw time series lookup errors
 class timeseriesException(Exception):
@@ -36,6 +38,25 @@ def _get_projected_xy_point(lon: float, lat: float, projection: str) -> geometry
     )
     point = geometry.Point(*reprojection.transform(lon, lat))
     return point
+
+
+def _merge_default_variables(variables: List[str]) -> set[str]:
+    _default_variables = [
+        "v",
+        "v_error",
+        "vx",
+        "vx_error",
+        "vy",
+        "vy_error",
+        "date_dt",
+        "satellite_img1",
+        "mission_img1",
+    ]
+    query_variables = set(_default_variables)
+    query_variables.update(variables)
+    return query_variables
+
+    return []
 
 
 def find(
@@ -197,22 +218,9 @@ def export_csv(
 ) -> None:
     """Exports a list of ITS_LIVE glacier velocity variables to csv files"""
 
-    _default_variables = [
-        "v",
-        "v_error",
-        "vx",
-        "vx_error",
-        "vy",
-        "vy_error",
-        "date_dt",
-        "satellite_img1",
-        "mission_img1",
-    ]
+    query_variables = _merge_default_variables(variables)
 
     outdir = f"./itslive-{uuid4()}" if outdir is None else outdir
-
-    query_variables = set(_default_variables)
-    query_variables.update(variables)
 
     Path(outdir).mkdir(parents=True, exist_ok=True)
 
@@ -277,22 +285,9 @@ def export_netcdf(
 ) -> None:
     """Exports a list of ITS_LIVE glacier velocity variables to netcdf files"""
 
-    _default_variables = [
-        "v",
-        "v_error",
-        "vx",
-        "vx_error",
-        "vy",
-        "vy_error",
-        "date_dt",
-        "satellite_img1",
-        "mission_img1",
-    ]
+    query_variables = _merge_default_variables(variables)
 
     outdir = f"./itslive-{uuid4()}" if outdir is None else outdir
-
-    query_variables = set(_default_variables)
-    query_variables.update(variables)
     Path(outdir).mkdir(parents=True, exist_ok=True)
 
     for point in track(
@@ -319,20 +314,7 @@ def export_stdout(
 ) -> None:
     """Exports a list of ITS_LIVE glacier velocity variables to stdout"""
 
-    _default_variables = [
-        "v",
-        "v_error",
-        "vx",
-        "vx_error",
-        "vy",
-        "vy_error",
-        "date_dt",
-        "satellite_img1",
-        "mission_img1",
-    ]
-
-    query_variables = set(_default_variables)
-    query_variables.update(variables)
+    query_variables = _merge_default_variables(variables)
 
     for point in track(
         points,
@@ -370,3 +352,39 @@ def export_stdout(
             rprint(outstr)
         else:
             rprint(f"[red on black] No data found at [/] lon: {lon}, lat: {lat}")
+
+
+def plot_time_series(
+    points: List[tuple[float, float]],
+    variable: str = "v",
+    label_by: str = "location",
+    outdir: Optional[str] = None,
+) -> Any:
+    return None
+
+
+def _plot_time_series_terminal(
+    points: List[tuple[float, float]],
+    variable: List[str] = ["v"],
+    label_by: str = "location",
+    outdir: Optional[str] = None,
+):
+    for point in track(
+        points,
+        description=f"Processing {len(points)} coordinates...",
+        total=len(points),
+    ):
+        lon = round(point[0], 4)
+        lat = round(point[1], 4)
+
+        series = get_time_series([(lon, lat)], variables=variable)
+        if series is not None and len(series) > 0:
+            ts = series[0]["time_series"]
+            plot_terminal(lon, lat, ts, variable)
+            # max_variable = (
+            #     ts[variable]
+            #     .where(ts[variable] == ts[variable].max(), drop=True)
+            #     .squeeze()
+            # )
+            # rprint(f"Max {variable}: {max_variable[variable].values}")
+    return None
