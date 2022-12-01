@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "itslive"
 homepage = "https://github.com/nasa-jpl/itslive-vortex"
-version = "0.1.4"
+version = "0.1.5"
 description = "Python client for ITSLIVE gralcier velocity data"
 authors = ["betolink <luis.lopez@nsidc.org>"]
 license = "GNUL V3"

@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.1.5] 2022-12-01
+
+* features
+    * implemented plot in stdout with plotext
 
 ## [v0.1.4] 2022-11-28
 
