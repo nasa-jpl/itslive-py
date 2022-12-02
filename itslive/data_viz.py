@@ -1,5 +1,7 @@
+from datetime import date
 from typing import List
 
+import pandas as pd
 import plotext as plt
 import xarray as xr
 
@@ -12,14 +14,13 @@ def plot_terminal(
     """Plots a variable from a given lon, lat in the terminal"""
     plt.date_form("Y-m-d")
     # the beauty of pandas + xarray
-    ts = dataset[variable].to_pandas().dropna().sort_index()
-    dates = [d.strftime("%Y-%m-%d") for d in ts.index.to_pydatetime()]
-    # TODO: add stats on the graph, i.e. max, min, normalize date axis
+    ts = dataset[variable].to_pandas().sort_index()
+    dates = [d for d in ts.index.to_pydatetime()]
     values = [float(v[0]) for v in ts.values]
-    plt.bar(
-        dates,
-        values,
-    )
+    xticks = [i for i in range(0, len(dates))]
+    xlabels = [d.strftime("%Y/%m") for d in dates]
+    plt.xticks(xticks, xlabels)
+    plt.plot(values)
     plt.show()
 
 

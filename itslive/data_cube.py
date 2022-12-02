@@ -381,10 +381,20 @@ def _plot_time_series_terminal(
         if series is not None and len(series) > 0:
             ts = series[0]["time_series"]
             plot_terminal(lon, lat, ts, variable)
-            # max_variable = (
-            #     ts[variable]
-            #     .where(ts[variable] == ts[variable].max(), drop=True)
-            #     .squeeze()
-            # )
-            # rprint(f"Max {variable}: {max_variable[variable].values}")
+            max_variable = (
+                ts[variable]
+                .where(ts[variable] == ts[variable].max(), drop=True)
+                .squeeze()
+            )
+            min_variable = (
+                ts[variable]
+                .where(ts[variable] == ts[variable].min(), drop=True)
+                .squeeze()
+            )
+            max_value = max_variable[variable[0]].values
+            min_value = min_variable[variable[0]].values
+
+            rprint(f"Max {variable} on {max_variable['mid_date'].values}: {max_value}")
+            rprint(f"Min {variable} on {min_variable['mid_date'].values}: {min_value}")
+            rprint(f"Cube URL: {max_variable.attrs['url']}")
     return None
