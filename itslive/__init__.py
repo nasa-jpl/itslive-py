@@ -6,3 +6,5 @@ __all__ = ["cubes"]
 
 # this comes from the installed version not the editable source
 __version__ = pkg_resources.get_distribution("itslive").version
+
+print(f"itslive version {__version__}")
