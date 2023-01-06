@@ -77,16 +77,20 @@ def export_time_series(points, variables, format, outdir):
     return None
 
 
-def plot_time_series(points, variable, label_by, outdir, stdout):
+def plot_time_series(points, variable, operation, freq, outdir, stdout):
     if stdout is not None:
         # experimental
-        itslive.cubes._plot_time_series_terminal(points, variable)
+        itslive.cubes._plot_time_series_terminal(points, variable, operation, freq)
     else:
         pass
         # TODO: save plot on outdir
         # plot = itslive.cubes.plot_time_series(points, variable, label_by)
         # plot.save()
     return None
+
+
+def list_variables():
+    itslive.cubes.list_variables()
 
 
 @click.command()
@@ -135,14 +139,14 @@ def plot_time_series(points, variable, label_by, outdir, stdout):
     ),
 )
 @click.option(
-    "--label-by",
-    type=click.Choice(["location", "sensor"], case_sensitive=False),
-    multiple=True,
-    default=["location"],
+    "--agg",
+    type=str,
+    multiple=False,
+    default="median-m",
     required=False,
     help=(
-        "Color code for the plot, location uses the same color for a given lon, lat pair"
-        "if we label by sensor the color will group by different sensors on a lon, lat pair"
+        "Aggregation for a given frequency separated by a hyphen, aggregation-frequency"
+        "examples: monthly mean woould be: mean-m, weekly median: median-w"
     ),
 )
 @click.option(
@@ -158,9 +162,7 @@ def plot_time_series(points, variable, label_by, outdir, stdout):
     is_flag=True,
     help="Verbose output",
 )
-def plot(
-    itslive_catalog, input_coordinates, lat, lon, variable, label_by, outdir, stdout
-):
+def plot(itslive_catalog, input_coordinates, lat, lon, variable, agg, outdir, stdout):
     """
     ITS_LIVE Global Glacier Veolocity
 
@@ -180,7 +182,14 @@ def plot(
             points.append((lon, lat))
 
     if len(points):
+        aggregation = agg.split("-")
+        operation = aggregation[0]
+        freq = aggregation[1]
+        print(freq, operation)
         # print(variable, type(variable), list(variable))
-        plot_time_series(points, list(variable), label_by, outdir, stdout)
+        plot_time_series(points, list(variable), operation, freq, outdir, stdout)
     else:
-        rprint(" At least one set of coordinates are needed, --help")
+        rprint(
+            "At least one set of coordinates are needed, here is a list of the available variables: \n"
+        )
+        list_variables()

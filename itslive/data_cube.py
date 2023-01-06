@@ -8,9 +8,12 @@ import pyproj
 import requests
 # for datacube xarray/zarr access
 import xarray as xr
+from matplotlib import pyplot as plt
 from rich import print as rprint
 from rich.progress import track
 from shapely import geometry
+
+import itslive
 
 from .data_viz import plot_terminal, plot_variable
 
@@ -57,6 +60,12 @@ def _merge_default_variables(variables: List[str]) -> set[str]:
     return query_variables
 
     return []
+
+
+def list_variables() -> None:
+    variables = itslive.__variables__
+    for v in variables:
+        rprint(f"[red on black] {v} [/]")
 
 
 def find(
@@ -198,7 +207,7 @@ def get_time_series(
 
     :params points: List of lon lat coordinates (i.e. some points laong the center line of a glacier)
     :params variables: list of variables included in the Dataset: v, vx, vy etc.
-    :returns: list of tuples with coordinates and xarray Datasets for the matching Zarr cubes
+    :returns List[Dict]: list of tuples with coordinates and xarray Datasets for the matching Zarr cubes
     """
     velocity_ts: List = []
     for point in points:
@@ -240,7 +249,12 @@ def export_csv(
     variables: List[str] = ["v"],
     outdir: Optional[str] = None,
 ) -> None:
-    """Exports a list of ITS_LIVE glacier velocity variables to csv files"""
+    """Exports a list of ITS_LIVE glacier velocity variables to csv files
+
+    :params points: List of lon lat coordinates (i.e. some points laong the center line of a glacier)
+    :params variables: list of variables included in the Dataset: v, vx, vy etc.
+    :params outdir: directory to place the CSV files
+    """
 
     query_variables = _merge_default_variables(variables)
 
@@ -307,7 +321,12 @@ def export_netcdf(
     variables: List[str] = ["v"],
     outdir: Optional[str] = None,
 ) -> None:
-    """Exports a list of ITS_LIVE glacier velocity variables to netcdf files"""
+    """Exports a list of ITS_LIVE glacier velocity variables to netcdf files
+
+    :params points: List of lon lat coordinates (i.e. some points laong the center line of a glacier)
+    :params variables: list of variables included in the Dataset: v, vx, vy etc.
+    :params outdir: directory to place the CSV files
+    """
 
     query_variables = _merge_default_variables(variables)
 
@@ -336,7 +355,11 @@ def export_stdout(
     points: List[tuple[float, float]],
     variables: List[str] = ["v"],
 ) -> None:
-    """Exports a list of ITS_LIVE glacier velocity variables to stdout"""
+    """Exports a list of ITS_LIVE glacier velocity variables to stdout
+
+    :params points: List of lon lat coordinates (i.e. some points laong the center line of a glacier)
+    :params variables: list of variables included in the Dataset: v, vx, vy etc.
+    """
 
     query_variables = _merge_default_variables(variables)
 
@@ -382,17 +405,14 @@ def plot_time_series(
     points: List[tuple[float, float]],
     variable: str = "v",
     label_by: str = "location",
-    outdir: Optional[str] = None,
 ) -> Any:
-    return None
+    """Plots velocity time series for a list of lon, lat locations. Color coding
+    can be by location or satellite, satellite is better suited for single points.
 
-
-def _plot_time_series_terminal(
-    points: List[tuple[float, float]],
-    variable: List[str] = ["v"],
-    label_by: str = "location",
-    outdir: Optional[str] = None,
-):
+    :params points: List of lon lat coordinates (i.e. some points laong the center line of a glacier)
+    :params variables: list of variables included in the Dataset: v, vx, vy etc.
+    """
+    fig, ax = plt.subplots(1, 1)
     for point in track(
         points,
         description=f"Processing {len(points)} coordinates...",
@@ -401,10 +421,42 @@ def _plot_time_series_terminal(
         lon = round(point[0], 4)
         lat = round(point[1], 4)
 
-        series = get_time_series([(lon, lat)], variables=variable)
+        query_variables = _merge_default_variables(variable)
+
+        series = get_time_series([(lon, lat)], variables=query_variables)
         if series is not None and len(series) > 0:
             ts = series[0]["time_series"]
-            plot_terminal(lon, lat, ts, variable)
+            plot_variable(lon, lat, ax, ts, variable, label_by)
+
+    return ax
+
+
+def _plot_time_series_terminal(
+    points: List[tuple[float, float]],
+    variable: List[str] = ["v"],
+    operation: str = "median",
+    freq: str = "m",
+):
+    """
+    A bit of an easter egg. Plots velocity time series directly on the terminal.
+    only used by the CLI via the itslive-plot command.
+    """
+    for point in track(
+        points,
+        description=f"Processing {len(points)} coordinates...",
+        total=len(points),
+    ):
+        lon = round(point[0], 4)
+        lat = round(point[1], 4)
+
+        query_variables = _merge_default_variables(variable)
+
+        series = get_time_series([(lon, lat)], variables=query_variables)
+        if series is not None and len(series) > 0:
+            ts = series[0]["time_series"]
+
+            plot_terminal(lon, lat, ts, variable, operation, freq)
+
             max_variable = (
                 ts[variable]
                 .where(ts[variable] == ts[variable].max(), drop=True)
