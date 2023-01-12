@@ -132,6 +132,7 @@ def find_by_bbox(
     return cubes
 
 
+
 def find_by_point(lon: float, lat: float) -> List[Dict[str, Any]]:
     """
     Finds the zarr cubes that contain a given lon, lat pair.
@@ -150,14 +151,35 @@ def find_by_point(lon: float, lat: float) -> List[Dict[str, Any]]:
             projected_point = _get_projected_xy_point(
                 lon, lat, cubefeature["properties"]["epsg"]
             )
-            cubes.append(cubefeature)
+            pp_epsg = cubefeature["properties"]["epsg"]
             if not projected_bbox.contains(projected_point):
                 print(
-                    "Warning: bbox in projected coordinates does not contain selected point"
+                    "bbox in projected coordinates does not contain selected point - searching in local EPSG - ", end = ''
                 )
-                # TODO: implement Mark's fix to find the closest cube
-            break
+                # re-run all features using cube projection bbox (until you find one, then stop), this time using each cube's epsg bbox for the inclusion test - requires reprojecting point to cube cs
+                # TODO- Done Below?: implement Mark's fix to find the closest cube
+                found_correct_cube = False
+                for g in _catalog["features"]:
+                    cubefeature2 = g
+                    projected_bbox = geometry.shape(cubefeature2["properties"]["geometry_epsg"])
+                    if pp_epsg == cubefeature2["properties"]["epsg"]: # projected point in same epsg as cube bbox
+                        point_in_cube_epsg = projected_point
+                    else:
+                        point_in_cube_epsg = _get_projected_xy_point(
+                                                                    lon, lat, cubefeature2["properties"]["epsg"]
+                                                                )
+                    if projected_bbox.contains(point_in_cube_epsg):
+                        cubefeature = cubefeature2
+                        print( "found correct cube")
+                        found_correct_cube = True
+                        break
+                if not(found_correct_cube):
+                    print(f"correct cube not found \n Warning:  point ({lon},{lat}) does not fall into coverage of available data cubes, nearest cube used here may or may not be appropriate")
 
+            cubes.append(cubefeature)
+    if len(cubes)==0:
+         print(f"Warning:  point ({lon},{lat}) does not fall into coverage of available data cubes, empty list returned")
+         
     return cubes
 
 
@@ -212,6 +234,8 @@ def get_time_series(
             time_series = xr_da[variables].sel(
                 x=projected_point.x, y=projected_point.y, method="nearest"
             )
+            # TODO  - returned coordinates should include the nearest neighbor x and y from the xr.Dataset 
+            #       - the lon and lat are the user requested coordinates, not the itslive/xarray nearest neighbor equivalent
             if time_series is not None and isinstance(time_series, xr.Dataset):
                 velocity_ts.append(
                     {"coordinates": (lon, lat), "time_series": time_series}
