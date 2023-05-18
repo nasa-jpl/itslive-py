@@ -1,5 +1,10 @@
 # Changelog
 
+
+## [v0.1.6] 2022-12-29
+* features
+    * implemented plotting methods
+
 ## [v0.1.5] 2022-12-01
 
 * features
