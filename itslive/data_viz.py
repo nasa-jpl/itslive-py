@@ -3,8 +3,12 @@ from typing import Any
 import matplotlib
 import numpy as np
 import pandas as pd
-import plotext as plt
+# import plotext as plt # plt is typically how pyplot is imported
+import plotext
 import xarray as xr
+
+
+# import itslive
 
 
 def plot_terminal(
@@ -15,40 +19,17 @@ def plot_terminal(
     operation: str = "median",
     freq: str = "m",
 ) -> None:
-    """Plots a variable from an already located xarray dataset in the terminal"""
-    plt.date_form("Y-m-d")
-    sat = np.unique(dataset["satellite_img1"].values)
-    sats = set([str(s[0]) for s in sat])
-    g_ts = dataset.to_pandas().sort_index()
-
-    for satellite in sats:
-        ts = getattr(
-            (
-                g_ts.where(g_ts["satellite_img1"].str[:1] == satellite)[
-                    variable
-                ].groupby(pd.Grouper(freq=freq))
-            ),
-            operation,
-        )()
-
-        dates = [
-            d.to_pydatetime().strftime("%Y-%m-%d")
-            for d in pd.date_range(start=ts.index.min(), end=ts.index.max(), freq=freq)
-        ]
-
-        values = [float(v[0]) for v in ts.values]
-        if satellite in ["1", "2"]:
-            label = f"Sentinel {satellite}"
-        else:
-            label = f"Landsat {satellite}"
-        plt.plot(dates, values, label=label)
-
-        xticks, xlabels = list(dates[::6]), list(dates[::6])
-        plt.xticks(xticks, xlabels)
-    plt.xlabel("Date")
-    # TODO: add lat, lon in plot
-    plt.ylabel(variable)
-    plt.show()
+    """Plots a variable from a given lon, lat in the terminal"""
+    plotext.date_form("Y-m-d")
+    # the beauty of pandas + xarray
+    ts = dataset[variable].to_pandas().sort_index()
+    dates = [d for d in ts.index.to_pydatetime()]
+    values = [float(v[0]) for v in ts.values]
+    xticks = [i for i in range(0, len(dates))]
+    xlabels = [d.strftime("%Y/%m") for d in dates]
+    plotext.xticks(xticks, xlabels)
+    plotext.plot(values)
+    plotext.show()
 
 
 def _plot_by_location(

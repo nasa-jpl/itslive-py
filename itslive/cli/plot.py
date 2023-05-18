@@ -69,22 +69,22 @@ def validate_csv(ctx, param, value):
 
 def export_time_series(points, variables, format, outdir):
     if format == "csv":
-        itslive.cubes.export_csv(points, variables, outdir)
+        itslive.data_cube.export_csv(points, variables, outdir)
     elif format == "netcdf":
-        itslive.cubes.export_netcdf(points, variables, outdir)
+        itslive.data_cube.export_netcdf(points, variables, outdir)
     else:
-        itslive.cubes.export_stdout(points, variables)
+        itslive.data_cube.export_stdout(points, variables)
     return None
 
 
 def plot_time_series(points, variable, operation, freq, outdir, stdout):
     if stdout is not None:
         # experimental
-        itslive.cubes._plot_time_series_terminal(points, variable, operation, freq)
+        itslive.data_cube._plot_time_series_terminal(points, variable)
     else:
         pass
         # TODO: save plot on outdir
-        # plot = itslive.cubes.plot_time_series(points, variable, label_by)
+        # plot = itslive.data_cube.plot_time_series(points, variable, label_by)
         # plot.save()
     return None
 
@@ -171,8 +171,8 @@ def plot(itslive_catalog, input_coordinates, lat, lon, variable, agg, outdir, st
     """
 
     points = []
-    itslive.cubes.load_catalog(itslive_catalog)
-    rprint(f"Using: {itslive.cubes._current_catalog_url}")
+    itslive.data_cube.load_catalog(itslive_catalog)
+    rprint(f"Using: {itslive.data_cube._current_catalog_url}")
     if input_coordinates is not None:
         # rprint(f"input file head: {input.head}")
         for index, row in input_coordinates.iterrows():

@@ -1,8 +1,8 @@
-import pkg_resources  # type: ignore
+from importlib.metadata import version
 
-from itslive import data_cube as cubes
+from itslive import data_cube
 
-__all__ = ["cubes"]
+__all__ = ["data_cube"]
 
 __variables__ = [
     "acquisition_date_img1",
@@ -65,6 +65,4 @@ __variables__ = [
 ]
 
 # this comes from the installed version not the editable source
-__version__ = pkg_resources.get_distribution("itslive").version
-
-print(f"itslive version {__version__}")
+__version__ = version("earthaccess")
