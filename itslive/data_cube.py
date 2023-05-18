@@ -13,7 +13,66 @@ from rich import print as rprint
 from rich.progress import track
 from shapely import geometry
 
-import itslive
+__variables__ = [
+    "acquisition_date_img1",
+    "acquisition_date_img2",
+    "autoRIFT_software_version",
+    "chip_size_height",
+    "chip_size_width",
+    "date_center",
+    "date_dt",
+    "granule_url",
+    "interp_mask",
+    "mapping",
+    "mid_date",
+    "mission_img1",
+    "mission_img2",
+    "roi_valid_percentage",
+    "satellite_img1",
+    "satellite_img2",
+    "sensor_img1",
+    "sensor_img2",
+    "stable_count_mask",
+    "stable_count_slow",
+    "stable_shift_flag",
+    "v",
+    "v_error",
+    "va",
+    "va_error",
+    "va_error_mask",
+    "va_error_modeled",
+    "va_error_slow",
+    "va_stable_shift",
+    "va_stable_shift_mask",
+    "va_stable_shift_slow",
+    "vr",
+    "vr_error",
+    "vr_error_mask",
+    "vr_error_modeled",
+    "vr_error_slow",
+    "vr_stable_shift",
+    "vr_stable_shift_mask",
+    "vr_stable_shift_slow",
+    "vx",
+    "vx_error",
+    "vx_error_mask",
+    "vx_error_modeled",
+    "vx_error_slow",
+    "vx_stable_shift",
+    "vx_stable_shift_mask",
+    "vx_stable_shift_slow",
+    "vy",
+    "vy_error",
+    "vy_error_mask",
+    "vy_error_modeled",
+    "vy_error_slow",
+    "vy_stable_shift",
+    "vy_stable_shift_mask",
+    "vy_stable_shift_slow",
+    "x",
+    "y",
+]
+
 
 from .data_viz import plot_terminal, plot_variable
 
@@ -63,7 +122,7 @@ def _merge_default_variables(variables: List[str]) -> set[str]:
 
 
 def list_variables() -> None:
-    variables = itslive.__variables__
+    variables = __variables__
     for v in variables:
         rprint(f"[red on black] {v} [/]")
 
@@ -132,7 +191,6 @@ def find_by_bbox(
     return cubes
 
 
-
 def find_by_point(lon: float, lat: float) -> List[Dict[str, Any]]:
     """
     Finds the zarr cubes that contain a given lon, lat pair.
@@ -154,32 +212,41 @@ def find_by_point(lon: float, lat: float) -> List[Dict[str, Any]]:
             pp_epsg = cubefeature["properties"]["epsg"]
             if not projected_bbox.contains(projected_point):
                 print(
-                    "bbox in projected coordinates does not contain selected point - searching in local EPSG - ", end = ''
+                    "bbox in projected coordinates does not contain selected point - searching in local EPSG - ",
+                    end="",
                 )
                 # re-run all features using cube projection bbox (until you find one, then stop), this time using each cube's epsg bbox for the inclusion test - requires reprojecting point to cube cs
                 # TODO- Done Below?: implement Mark's fix to find the closest cube
                 found_correct_cube = False
                 for g in _catalog["features"]:
                     cubefeature2 = g
-                    projected_bbox = geometry.shape(cubefeature2["properties"]["geometry_epsg"])
-                    if pp_epsg == cubefeature2["properties"]["epsg"]: # projected point in same epsg as cube bbox
+                    projected_bbox = geometry.shape(
+                        cubefeature2["properties"]["geometry_epsg"]
+                    )
+                    if (
+                        pp_epsg == cubefeature2["properties"]["epsg"]
+                    ):  # projected point in same epsg as cube bbox
                         point_in_cube_epsg = projected_point
                     else:
                         point_in_cube_epsg = _get_projected_xy_point(
-                                                                    lon, lat, cubefeature2["properties"]["epsg"]
-                                                                )
+                            lon, lat, cubefeature2["properties"]["epsg"]
+                        )
                     if projected_bbox.contains(point_in_cube_epsg):
                         cubefeature = cubefeature2
-                        print( "found correct cube")
+                        print("found correct cube")
                         found_correct_cube = True
                         break
-                if not(found_correct_cube):
-                    print(f"correct cube not found \n Warning:  point ({lon},{lat}) does not fall into coverage of available data cubes, nearest cube used here may or may not be appropriate")
+                if not (found_correct_cube):
+                    print(
+                        f"correct cube not found \n Warning:  point ({lon},{lat}) does not fall into coverage of available data cubes, nearest cube used here may or may not be appropriate"
+                    )
 
             cubes.append(cubefeature)
-    if len(cubes)==0:
-         print(f"Warning:  point ({lon},{lat}) does not fall into coverage of available data cubes, empty list returned")
-         
+    if len(cubes) == 0:
+        print(
+            f"Warning:  point ({lon},{lat}) does not fall into coverage of available data cubes, empty list returned"
+        )
+
     return cubes
 
 
@@ -234,7 +301,7 @@ def get_time_series(
             time_series = xr_da[variables].sel(
                 x=projected_point.x, y=projected_point.y, method="nearest"
             )
-            # TODO  - returned coordinates should include the nearest neighbor x and y from the xr.Dataset 
+            # TODO  - returned coordinates should include the nearest neighbor x and y from the xr.Dataset
             #       - the lon and lat are the user requested coordinates, not the itslive/xarray nearest neighbor equivalent
             if time_series is not None and isinstance(time_series, xr.Dataset):
                 velocity_ts.append(
@@ -267,7 +334,6 @@ def export_csv(
         description=f"Processing {len(points)} coordinates...",
         total=len(points),
     ):
-
         lon = round(point[0], 4)
         lat = round(point[1], 4)
         result_series = get_time_series([(lon, lat)], query_variables)
@@ -338,7 +404,6 @@ def export_netcdf(
         description=f"Processing {len(points)} coordinates...",
         total=len(points),
     ):
-
         lon = round(point[0], 4)
         lat = round(point[1], 4)
 
@@ -368,7 +433,6 @@ def export_stdout(
         description=f"Processing {len(points)} coordinates...",
         total=len(points),
     ):
-
         lon = round(point[0], 4)
         lat = round(point[1], 4)
 

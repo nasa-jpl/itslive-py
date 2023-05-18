@@ -3,7 +3,7 @@ import logging
 import itslive
 import pytest
 import xarray as xr
-from itslive import cubes
+from itslive import data_cube as cubes
 
 logger = logging.getLogger(__name__)
 
