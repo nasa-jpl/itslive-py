@@ -6,6 +6,8 @@ dependencies:
   - ipyleaflet
   - geopandas
   - matplotlib-base
+  - pyproj
   - pip
   - pip:
     - git+https://github.com/nasa-jpl/itslive-vortex.git
+    - utm
