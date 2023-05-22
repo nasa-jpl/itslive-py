@@ -1,5 +1,10 @@
 # Changelog
 
+## [UNRELEASED]
+* features:
+    * Mark added a function to find the neares cube for edge cases
+    * reorganized imports to avoid circular dependencies
+    * new example notebooks
 
 ## [v0.1.6] 2022-12-29
 * features

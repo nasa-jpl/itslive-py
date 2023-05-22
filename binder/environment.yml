@@ -1,1 +1,11 @@
-../environment.yml
+name: itslive_vortex
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9.*
+  - ipyleaflet
+  - geopandas
+  - matplotlib-base
+  - pip
+  - pip:
+    - git+https://github.com/nasa-jpl/itslive-vortex.git
