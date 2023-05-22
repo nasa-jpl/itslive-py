@@ -3,7 +3,7 @@ import logging
 import itslive
 import pytest
 import xarray as xr
-from itslive import data_cube as cubes
+from itslive import velocity_cubes as cubes
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +34,16 @@ invalid_lat_lons = [
 ]
 
 
+def test_imports():
+    from itslive import velocity_cubes
+
+
 def test_we_can_verify_version():
     assert type(itslive.__version__) is str
 
 
 def test_load_default_cube():
-    catalog = cubes.load_catalog()
+    catalog, url = cubes.load_catalog()
     assert type(catalog) is dict
 
 

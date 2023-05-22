@@ -8,25 +8,13 @@ import pyproj
 import requests
 # for datacube xarray/zarr access
 import xarray as xr
+from matplotlib import pyplot as plt
 from rich import print as rprint
 from rich.progress import track
 from shapely import geometry
 
-import numpy as np
 
-from ..data_viz import plot_terminal, plot_variable
-
-
-# __init__.py uses __all__ here to import listed classes, variables, and functions into itslive.data_cubes namespace (see https://stackoverflow.com/questions/16509012/hide-external-modules-when-importing-a-module-e-g-regarding-code-completion )
-__all__ = [
-            "find_by_point",
-            "find_by_polygon",
-            "get_time_series",
-            "export_csv",
-            "export_netcdf",
-            "export_stdout",
-            "DEFAULT_CATALOG_URL",
-            ]
+from .data_viz import plot_terminal, plot_variable
 
 
 # class to throw time series lookup errors
@@ -39,27 +27,11 @@ DEFAULT_CATALOG_URL = (
 )
 
 
-def load_catalog(
-    url: str = DEFAULT_CATALOG_URL,
-):
-    """Loads a geojson catalog containing all the zarr cube urls and metadata,
-    if url is not provided will load the default location on S3
-        returns catalog,catalog_url
-    """
-    try:
-        _current_catalog_url = url
-        _catalog = requests.get(_current_catalog_url).json()
-    except Exception:
-        raise Exception
-    return _catalog,_current_catalog_url
-
-
-# keep track of open cubes so that we don't re-open (it is slow to re-read xarray metadata
-# and dimension vectors)
+# keep track of open cubes so that we don't re-read xarray metadata
+# and dimension vectors
 _open_cubes = {}
-# _catalog = requests.get(DEFAULT_CATALOG_URL).json()
-# _current_catalog_url = DEFAULT_CATALOG_URL
-_catalog,_current_catalog_url = load_catalog(url=DEFAULT_CATALOG_URL)
+_catalog = requests.get(DEFAULT_CATALOG_URL).json()
+_current_catalog_url = DEFAULT_CATALOG_URL
 
 
 def _get_projected_xy_point(lon: float, lat: float, projection: str) -> geometry.Point:
@@ -67,13 +39,6 @@ def _get_projected_xy_point(lon: float, lat: float, projection: str) -> geometry
         "epsg:4326", f"epsg:{projection}", always_xy=True
     )
     point = geometry.Point(*reprojection.transform(lon, lat))
-    return point
-
-def _get_geographic_point_from_projected(x: float, y: float, from_projection: str) -> geometry.Point:
-    to_ll_reprojection = pyproj.Transformer.from_proj(
-        f"epsg:{from_projection}", "epsg:4326",  always_xy=True
-    )
-    point = geometry.Point(*to_ll_reprojection.transform(x, y))
     return point
 
 
@@ -94,6 +59,12 @@ def _merge_default_variables(variables: List[str]) -> set[str]:
     return query_variables
 
     return []
+
+
+def list_variables() -> None:
+    variables = __variables__
+    for v in variables:
+        rprint(f"[red on black] {v} [/]")
 
 
 def find(
@@ -118,6 +89,19 @@ def find(
         cubes = find_by_polygon(points)
     return cubes
 
+
+def load_catalog(
+    url: str = "https://its-live-data.s3.amazonaws.com/datacubes/catalog_v02.json",
+):
+    """Loads a geojson catalog containing all the zarr cube urls and metadata,
+    if url is not provided will load the default location on S3
+    """
+    try:
+        _current_catalog_url = url
+        _catalog = requests.get(_current_catalog_url).json()
+    except Exception:
+        raise Exception
+    return _catalog
 
 
 def find_by_bbox(
@@ -165,13 +149,43 @@ def find_by_point(lon: float, lat: float) -> List[Dict[str, Any]]:
             projected_point = _get_projected_xy_point(
                 lon, lat, cubefeature["properties"]["epsg"]
             )
-            cubes.append(cubefeature)
+            pp_epsg = cubefeature["properties"]["epsg"]
             if not projected_bbox.contains(projected_point):
                 print(
-                    "Warning: bbox in projected coordinates does not contain selected point"
+                    "bbox in projected coordinates does not contain selected point - searching in local EPSG - ",
+                    end="",
                 )
-                # TODO: implement Mark's fix to find the closest cube
-            break
+                # re-run all features using cube projection bbox (until you find one, then stop), this time using each cube's epsg bbox for the inclusion test - requires reprojecting point to cube cs
+                # TODO- Done Below?: implement Mark's fix to find the closest cube
+                found_correct_cube = False
+                for g in _catalog["features"]:
+                    cubefeature2 = g
+                    projected_bbox = geometry.shape(
+                        cubefeature2["properties"]["geometry_epsg"]
+                    )
+                    if (
+                        pp_epsg == cubefeature2["properties"]["epsg"]
+                    ):  # projected point in same epsg as cube bbox
+                        point_in_cube_epsg = projected_point
+                    else:
+                        point_in_cube_epsg = _get_projected_xy_point(
+                            lon, lat, cubefeature2["properties"]["epsg"]
+                        )
+                    if projected_bbox.contains(point_in_cube_epsg):
+                        cubefeature = cubefeature2
+                        print("found correct cube")
+                        found_correct_cube = True
+                        break
+                if not (found_correct_cube):
+                    print(
+                        f"correct cube not found \n Warning:  point ({lon},{lat}) does not fall into coverage of available data cubes, nearest cube used here may or may not be appropriate"
+                    )
+
+            cubes.append(cubefeature)
+    if len(cubes) == 0:
+        print(
+            f"Warning:  point ({lon},{lat}) does not fall into coverage of available data cubes, empty list returned"
+        )
 
     return cubes
 
@@ -196,13 +210,11 @@ def get_time_series(
     points: List[tuple[float, float]], variables: List[str] = ["v"]
 ) -> List[Dict[str, Any]]:
     """
-    For the points in the list, returns a list of dictionaries - each one containing:
-        an xarray DataArray (time series) for each variable on the list for each of the lon lat points.
+    Returns an xarray DataArray (time series) for each variable on the list for each of the lon lat points.
 
-    :params points: List of (lon, lat) coordinates (EPSG:4326) (e.g. points along the center line of a glacier)
-    :params variables: list of variables to be included in the Dataset: v, vx, vy etc.
-    :returns: list of dictionaries with coordinates and xarray time series Datasets for the nearest neighbors to the points
-                ITS_LIVE processes on a 120 m grid, so nearest points will be close to requested points
+    :params points: List of lon lat coordinates (i.e. some points laong the center line of a glacier)
+    :params variables: list of variables included in the Dataset: v, vx, vy etc.
+    :returns List[Dict]: list of tuples with coordinates and xarray Datasets for the matching Zarr cubes
     """
     velocity_ts: List = []
     for point in points:
@@ -229,22 +241,11 @@ def get_time_series(
             time_series = xr_da[variables].sel(
                 x=projected_point.x, y=projected_point.y, method="nearest"
             )
-            
+            # TODO  - returned coordinates should include the nearest neighbor x and y from the xr.Dataset
+            #       - the lon and lat are the user requested coordinates, not the itslive/xarray nearest neighbor equivalent
             if time_series is not None and isinstance(time_series, xr.Dataset):
-                x_off = time_series.x.values - projected_point.x
-                y_off = time_series.y.values - projected_point.y
-                ll_pt = _get_geographic_point_from_projected( time_series.x.values, time_series.y.values, projection)
-                actual_lon = ll_pt.x
-                actual_lat = ll_pt.y
-                
                 velocity_ts.append(
-                    {
-                        "requested_point_geographic_coordinates": (lon, lat),
-                        "returned_point_geographic_coordinates": (actual_lon,actual_lat),
-                        "returned_point_projected_coordinates": {"epsg":projection, "coords":(time_series.x.values,time_series.y.values)},
-                        "returned_point_offset_from_requested_in_projection_meters": np.sqrt(x_off**2 + y_off**2),
-                        "time_series": time_series,
-                    }
+                    {"coordinates": (lon, lat), "time_series": time_series}
                 )
 
     return velocity_ts
@@ -255,7 +256,12 @@ def export_csv(
     variables: List[str] = ["v"],
     outdir: Optional[str] = None,
 ) -> None:
-    """Exports a list of ITS_LIVE glacier velocity variables to csv files"""
+    """Exports a list of ITS_LIVE glacier velocity variables to csv files
+
+    :params points: List of lon lat coordinates (i.e. some points laong the center line of a glacier)
+    :params variables: list of variables included in the Dataset: v, vx, vy etc.
+    :params outdir: directory to place the CSV files
+    """
 
     query_variables = _merge_default_variables(variables)
 
@@ -268,7 +274,6 @@ def export_csv(
         description=f"Processing {len(points)} coordinates...",
         total=len(points),
     ):
-
         lon = round(point[0], 4)
         lat = round(point[1], 4)
         result_series = get_time_series([(lon, lat)], query_variables)
@@ -322,7 +327,12 @@ def export_netcdf(
     variables: List[str] = ["v"],
     outdir: Optional[str] = None,
 ) -> None:
-    """Exports a list of ITS_LIVE glacier velocity variables to netcdf files"""
+    """Exports a list of ITS_LIVE glacier velocity variables to netcdf files
+
+    :params points: List of lon lat coordinates (i.e. some points laong the center line of a glacier)
+    :params variables: list of variables included in the Dataset: v, vx, vy etc.
+    :params outdir: directory to place the CSV files
+    """
 
     query_variables = _merge_default_variables(variables)
 
@@ -334,7 +344,6 @@ def export_netcdf(
         description=f"Processing {len(points)} coordinates...",
         total=len(points),
     ):
-
         lon = round(point[0], 4)
         lat = round(point[1], 4)
 
@@ -351,7 +360,11 @@ def export_stdout(
     points: List[tuple[float, float]],
     variables: List[str] = ["v"],
 ) -> None:
-    """Exports a list of ITS_LIVE glacier velocity variables to stdout"""
+    """Exports a list of ITS_LIVE glacier velocity variables to stdout
+
+    :params points: List of lon lat coordinates (i.e. some points laong the center line of a glacier)
+    :params variables: list of variables included in the Dataset: v, vx, vy etc.
+    """
 
     query_variables = _merge_default_variables(variables)
 
@@ -360,7 +373,6 @@ def export_stdout(
         description=f"Processing {len(points)} coordinates...",
         total=len(points),
     ):
-
         lon = round(point[0], 4)
         lat = round(point[1], 4)
 
@@ -397,17 +409,14 @@ def plot_time_series(
     points: List[tuple[float, float]],
     variable: str = "v",
     label_by: str = "location",
-    outdir: Optional[str] = None,
 ) -> Any:
-    return None
+    """Plots velocity time series for a list of lon, lat locations. Color coding
+    can be by location or satellite, satellite is better suited for single points.
 
-
-def _plot_time_series_terminal(
-    points: List[tuple[float, float]],
-    variable: List[str] = ["v"],
-    label_by: str = "location",
-    outdir: Optional[str] = None,
-):
+    :params points: List of lon lat coordinates (i.e. some points laong the center line of a glacier)
+    :params variables: list of variables included in the Dataset: v, vx, vy etc.
+    """
+    fig, ax = plt.subplots(1, 1)
     for point in track(
         points,
         description=f"Processing {len(points)} coordinates...",
@@ -416,10 +425,42 @@ def _plot_time_series_terminal(
         lon = round(point[0], 4)
         lat = round(point[1], 4)
 
-        series = get_time_series([(lon, lat)], variables=variable)
+        query_variables = _merge_default_variables(variable)
+
+        series = get_time_series([(lon, lat)], variables=query_variables)
         if series is not None and len(series) > 0:
             ts = series[0]["time_series"]
-            plot_terminal(lon, lat, ts, variable)
+            plot_variable(lon, lat, ax, ts, variable, label_by)
+
+    return ax
+
+
+def _plot_time_series_terminal(
+    points: List[tuple[float, float]],
+    variable: List[str] = ["v"],
+    operation: str = "median",
+    freq: str = "m",
+):
+    """
+    A bit of an easter egg. Plots velocity time series directly on the terminal.
+    only used by the CLI via the itslive-plot command.
+    """
+    for point in track(
+        points,
+        description=f"Processing {len(points)} coordinates...",
+        total=len(points),
+    ):
+        lon = round(point[0], 4)
+        lat = round(point[1], 4)
+
+        query_variables = _merge_default_variables(variable)
+
+        series = get_time_series([(lon, lat)], variables=query_variables)
+        if series is not None and len(series) > 0:
+            ts = series[0]["time_series"]
+
+            plot_terminal(lon, lat, ts, variable, operation, freq)
+
             max_variable = (
                 ts[variable]
                 .where(ts[variable] == ts[variable].max(), drop=True)

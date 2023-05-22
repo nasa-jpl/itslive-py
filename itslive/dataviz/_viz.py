@@ -1,12 +1,11 @@
 from typing import Any
 
-import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 # import plotext as plt # plt is typically how pyplot is imported
 import plotext
 import xarray as xr
-
 
 # import itslive
 
@@ -35,7 +34,7 @@ def plot_terminal(
 def _plot_by_location(
     lon: float,
     lat: float,
-    ax: matplotlib.axes.Axes,
+    ax: plt.Axes,
     dataset: xr.Dataset,
     variable: str = "v",
 ) -> None:
@@ -54,11 +53,10 @@ def _plot_by_location(
 def _plot_by_sensor(
     lon: float,
     lat: float,
-    ax: matplotlib.axes.Axes,
+    ax: plt.Axes,
     dataset: xr.Dataset,
     variable: str = "v",
 ) -> None:
-
     sats = np.unique(dataset["satellite_img1"].values)
     sat_plotsym_dict = {
         "1": "r+",
@@ -102,7 +100,7 @@ def _plot_by_sensor(
 def plot_variable(
     lon: float,
     lat: float,
-    ax: matplotlib.axes.Axes,
+    ax: plt.Axes,
     dataset: xr.Dataset,
     variable: str = "v",
     label_by: str = "location",
