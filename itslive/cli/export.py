@@ -131,7 +131,6 @@ def plot_time_series(points, variable, label_by, outdir, stdout):
         "v_error: error in v"
         "vx: Velocity x component"
         "vy: Velocity y component"
-        "for a full list visit"
     ),
 )
 @click.option(

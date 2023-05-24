@@ -1,5 +1,7 @@
 # to get and use geojson datacube catalog
 # for timing data access
+import json
+import pathlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
@@ -24,19 +26,26 @@ DEFAULT_CATALOG_URL = (
     "https://its-live-data.s3.amazonaws.com/datacubes/catalog_v02.json"
 )
 
+DEFAULT_CATALOG_CACHE_PATH = pathlib.Path.home() / ".itslive_catalog.json"
 
-def load_catalog(
-    url: str = DEFAULT_CATALOG_URL,
-):
+
+def load_catalog(url: str = DEFAULT_CATALOG_URL, reload: bool = False):
     """Loads a geojson catalog containing all the zarr cube urls and metadata,
     if url is not provided will load the default location on S3
         returns catalog,catalog_url
     """
-    try:
-        _current_catalog_url = url
-        _catalog = requests.get(_current_catalog_url).json()
-    except Exception:
-        raise Exception
+    if DEFAULT_CATALOG_CACHE_PATH.exists() and not reload:
+        _current_catalog_url = DEFAULT_CATALOG_URL
+        with open(DEFAULT_CATALOG_CACHE_PATH, "r") as f:
+            _catalog = json.load(f)
+    else:
+        try:
+            _current_catalog_url = url
+            _catalog = requests.get(_current_catalog_url).json()
+            with open(DEFAULT_CATALOG_CACHE_PATH, "w") as f:
+                json.dump(_catalog, f)
+        except Exception:
+            raise Exception
     return _catalog, _current_catalog_url
 
 
@@ -192,6 +201,7 @@ def get_time_series(
                 ITS_LIVE processes on a 120 m grid, so nearest points will be close to requested points
     """
     velocity_ts: List = []
+    variables = _merge_default_variables(variables)
     for point in points:
         lon = point[0]
         lat = point[1]

@@ -3,7 +3,6 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-# import plotext as plt # plt is typically how pyplot is imported
 import plotext
 import xarray as xr
 
