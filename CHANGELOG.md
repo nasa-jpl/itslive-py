@@ -1,6 +1,6 @@
 # Changelog
 
-## [UNRELEASED]
+## [v0.1.7] 2023-05-25
 * features:
     * Mark added a function to find the neares cube for edge cases
     * reorganized imports to avoid circular dependencies
