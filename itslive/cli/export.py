@@ -69,22 +69,22 @@ def validate_csv(ctx, param, value):
 
 def export_time_series(points, variables, format, outdir):
     if format == "csv":
-        itslive.data_cube.export_csv(points, variables, outdir)
+        itslive.velocity_cubes.export_csv(points, variables, outdir)
     elif format == "netcdf":
-        itslive.data_cube.export_netcdf(points, variables, outdir)
+        itslive.velocity_cubes.export_netcdf(points, variables, outdir)
     else:
-        itslive.data_cube.export_stdout(points, variables)
+        itslive.velocity_cubes.export_stdout(points, variables)
     return None
 
 
 def plot_time_series(points, variable, label_by, outdir, stdout):
     if stdout is not None:
         # experimental
-        itslive.data_cube._plot_time_series_terminal(points, variable)
+        itslive.velocity_cubes._plot_time_series_terminal(points, variable)
     else:
         pass
         # TODO: save plot on outdir
-        # plot = itslive.data_cube.plot_time_series(points, variable, label_by)
+        # plot = itslive.velocity_cubes.plot_time_series(points, variable, label_by)
         # plot.save()
     return None
 
@@ -131,7 +131,6 @@ def plot_time_series(points, variable, label_by, outdir, stdout):
         "v_error: error in v"
         "vx: Velocity x component"
         "vy: Velocity y component"
-        "for a full list visit"
     ),
 )
 @click.option(
@@ -160,10 +159,10 @@ def export(
     """
 
     points = []
-    itslive.data_cube.load_catalog(itslive_catalog)
+    itslive.velocity_cubes.load_catalog(itslive_catalog)
     if debug:
         rprint("Debug mode is [red]on[/]")
-        rprint(f"Using: {itslive.data_cube._current_catalog_url}")
+        rprint(f"Using: {itslive.velocity_cubes._current_catalog_url}")
     if input_coordinates is not None:
         # rprint(f"input file head: {input.head}")
         for index, row in input_coordinates.iterrows():

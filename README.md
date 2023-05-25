@@ -27,7 +27,7 @@ itslive-export --lat 70.153 --lon -46.231 --format stdout
 We can also plot any of the ITS_LIVE variables directly on the terminal by executing `itslive-plot`, e.g.
 
 ```bash
-itslive-plot --lat 70.1 --lon -46.1 --variable v --agg mean-d
+itslive-plot --lat 70.1 --lon -46.1 --variable v
 ```
 
  > Operations for the aggegation can be mean,max,min,average,median etc and the frequency is represented with a single character i.e. d=day, w=week, m=month.

@@ -3,7 +3,7 @@ import logging
 import itslive
 import pytest
 import xarray as xr
-from itslive import cubes
+from itslive import velocity_cubes as cubes
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +34,23 @@ invalid_lat_lons = [
 ]
 
 
+def test_imports():
+    functions = ["find", "find_by_point", "get_time_series"]
+    from itslive import velocity_cubes
+
+    assert velocity_cubes
+
+    for f in functions:
+        assert hasattr(velocity_cubes, f)
+        assert callable(getattr(velocity_cubes, f))
+
+
 def test_we_can_verify_version():
     assert type(itslive.__version__) is str
 
 
 def test_load_default_cube():
-    catalog = cubes.load_catalog()
+    catalog, url = cubes.load_catalog()
     assert type(catalog) is dict
 
 
@@ -76,7 +87,8 @@ def test_get_velocity_time_series_for_a_single_point():
     if ts is not None:
         assert type(ts) is list
         assert len(ts) > 0
-        assert "coordinates" in ts[0]
-        assert ts[0]["coordinates"] == (lon, lat)
+        assert "requested_point_geographic_coordinates" in ts[0]
+        assert "returned_point_geographic_coordinates" in ts[0]
+        assert ts[0]["requested_point_geographic_coordinates"] == (lon, lat)
         assert type(ts[0]["time_series"]) is xr.Dataset
         assert type(ts[0]["time_series"].v) is xr.DataArray
