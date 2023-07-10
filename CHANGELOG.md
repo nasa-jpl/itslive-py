@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+* features:
+    * Added scene pair velocity search and download API
+    * Terminal plot can be consolidated or grouped by satellite
+
 ## [v0.1.7] 2023-05-25
 * features:
     * Mark added a function to find the neares cube for edge cases

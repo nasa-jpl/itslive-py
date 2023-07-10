@@ -1,5 +1,4 @@
-# ITSLIVE Vortex
-<img src="docs/vortex.png" align="middle" width="200px"/>
+# ITS_LIVEpy
 
 # A Python client for ITSLIVE glacier velocity data.
 
@@ -7,12 +6,34 @@
 
 ```bash
 pip install itslive
+
+```
+
+Or with Conda
+
+```bash
+
+conda install -c conda-forge itslive
 ```
 
 In addition to NetCDF image pairs and mosaics, ITS_LIVE produces cloud-optimized Zarr data cubes, which contain all image-pair data co-aligned on a common grid for simplified data access. Cloud optimization enable rapid analysis without intermediary APIs or services and ITS_LIVE cubes can map directly into Python xarray or Julia ZArray structures.
 
 
 This library can be used as a stand alone tool to extract velocity time series from any given lon, lat pair on land glaciers. e.g.
+
+
+### Using a Jupyter notebook
+
+```python
+import itslive
+
+points=[(-47.1, 70.1),
+        (-46.1, 71.2)]
+
+velocities = itslive.velocity_cubes.get_time_series(points=points)
+
+```
+### Using the terminal
 
 ```bash
 itslive-export --lat 70.153 --lon -46.231 --format csv --outdir greenland
