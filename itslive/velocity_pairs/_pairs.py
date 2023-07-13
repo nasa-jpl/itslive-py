@@ -23,7 +23,7 @@ def find(
     min_interval: Union[None, int] = None,
     max_interval: Union[None, int] = None,
 ) -> List[str]:
-    """Find velocity netcdf files"""
+    """Returns a list velocity netcdf files based on the provided parameters"""
     urls = []
     if polygon is None and bbox is None:
         print("Search needs either bbox or polygon geometries")
