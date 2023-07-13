@@ -1,0 +1,70 @@
+site_name: itslive
+site_description: Client library for NASA Earthdata APIs
+site_url: https://github.com/nasa-jpl/itslive-vortex
+
+theme:
+  name: 'material'
+  palette:
+    - scheme: default
+      primary: teal
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+
+repo_name: nasa-jpl/itslive-vortex
+repo_url: https://github.com/nasa-jpl/itslive-vortex
+edit_uri: ''
+
+extra_css:
+  - css/styles.css
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            docstring_options:
+              ignore_init_summary: no
+            merge_init_into_class: yes
+            show_submodules: no
+          rendering:
+            show_root_heading: false
+            show_source: false
+  - mkdocs-jupyter:
+      execute: True
+
+nav:
+  - OVERVIEW: 'index.md'
+  - TUTORIALS:
+  - HOW-TO:
+  - USER REFERENCE:
+      - API:
+          - 'Search and Access of ITS_LIVE data': 'user-reference/api/api.md'
+      - Glossary:
+          - 'NASA Glossary': 'user-reference/glossary/nasa-glossary.md'
+          - 'Cloud Computing Terminology': 'user-reference/glossary/cloud-glossary.md'
+
+markdown_extensions:
+  - admonition
+  - callouts
+  - pymdownx.details
+  - meta
+  - toc:
+      toc_depth: 2
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+watch:
+  - docs
+  - notebooks
+  - itslive

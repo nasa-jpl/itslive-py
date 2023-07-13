@@ -2,6 +2,22 @@
 
 # A Python client for ITSLIVE glacier velocity data.
 
+<p align="center">
+
+<a href="https://pypi.org/project/itslive" target="_blank">
+    <img src="https://img.shields.io/pypi/v/itslive?color=%2334D058&label=pypi%20package" alt="Package version">
+</a>
+
+<a href="https://pypi.org/project/itslive/" target="_blank">
+    <img src="https://img.shields.io/pypi/pyversions/itslive.svg" alt="Python Versions">
+</a>
+
+<a href='https://itslive.readthedocs.io/en/latest/?badge=latest'>
+    <img src='https://readthedocs.org/projects/itslive/badge/?version=latest' alt='Documentation Status' />
+</a>
+
+</p>
+
 ## Installing *itslive*
 
 ```bash
