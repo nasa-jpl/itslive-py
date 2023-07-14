@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python=3.9.*
   - mamba
+  - cartopy
   - pip
   - pip:
     - pynvim

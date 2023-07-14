@@ -50,7 +50,6 @@ matplotlib = ">=3.3"
 h5netcdf = ">=0.11"
 dask = ">=2022.1"
 
-
 [tool.poetry.scripts]
 itslive-export = "itslive.cli.export:export"
 itslive-plot = "itslive.cli.plot:plot"
