@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "itslive"
-homepage = "https://github.com/nasa-jpl/itslive-vortex"
+homepage = "https://github.com/nasa-jpl/itslive-py"
 version = "0.2.0"
 description = "Python client for ITSLIVE glacier velocity data"
 authors = ["Luis Lopez <luis.lopez@nsidc.org>"]
-license = "GNUL V3"
+license = "GPL-3.0-only"
 
 [tool.poetry.dependencies]
 python = "^3.9"
