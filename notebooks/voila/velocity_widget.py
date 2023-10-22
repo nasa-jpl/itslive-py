@@ -11,6 +11,8 @@ import ipywidgets
 import markdown
 import numpy as np
 import pandas as pd
+import matplotlib.dates as pldates
+
 # to get and use geojson datacube catalog
 # for datacube xarray/zarr access
 from IPython.display import display
@@ -983,6 +985,17 @@ class ITSLIVE:
             self.fig.canvas.draw()
             self.fig_h.tight_layout()
             self.fig_h.canvas.draw()
+            self.ax.grid(axis='x')
+            # start, end = ax.get_xlim
+
+            loc = pldates.YearLocator() # this locator puts ticks at regular intervals
+            self.ax.xaxis.set_major_locator(loc)
+
+            years = self.ax.get_xticklabels()
+            for item in years:
+                item.set_fontsize(7)
+            self.ax.legend(fontsize=8)
+            self.ax.set_xlabel("Year")
 
             self._control_plot_button.disabled = False
         else:
