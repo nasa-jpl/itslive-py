@@ -94,7 +94,6 @@ def coverage(
 
 
 def _download_aws(urls: List[str], path: str) -> List[str]:
-
     # Closure!
     def _download_file_aws(url: str) -> str:
         local_filename = pathlib.Path(path) / pathlib.Path(url.split("/")[-1])

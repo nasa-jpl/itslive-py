@@ -9,12 +9,15 @@ from uuid import uuid4
 import numpy as np
 import pyproj
 import requests
+
 # for datacube xarray/zarr access
 import xarray as xr
 from itslive.dataviz import plot_terminal
 from rich import print as rprint
 from rich.progress import track
 from shapely import geometry
+
+import itslive.velocity_cubes as vc
 
 
 # class to throw time series lookup errors
@@ -26,6 +29,7 @@ DEFAULT_CATALOG_URL = (
     "https://its-live-data.s3.amazonaws.com/datacubes/catalog_v02.json"
 )
 
+
 DEFAULT_CATALOG_CACHE_PATH = pathlib.Path.home() / ".itslive_catalog.json"
 
 
@@ -35,25 +39,23 @@ def load_catalog(url: str = DEFAULT_CATALOG_URL, reload: bool = False):
         returns catalog,catalog_url
     """
     if DEFAULT_CATALOG_CACHE_PATH.exists() and not reload:
-        _current_catalog_url = DEFAULT_CATALOG_URL
         with open(DEFAULT_CATALOG_CACHE_PATH, "r") as f:
             _catalog = json.load(f)
     else:
         try:
-            _current_catalog_url = url
-            _catalog = requests.get(_current_catalog_url).json()
+            _catalog = requests.get(url).json()
             with open(DEFAULT_CATALOG_CACHE_PATH, "w") as f:
                 json.dump(_catalog, f)
         except Exception:
             raise Exception
-    return _catalog, _current_catalog_url
+    return _catalog
 
 
 # keep track of open cubes so that we don't re-open (it is slow to re-read xarray metadata
 # and dimension vectors)
 _open_cubes = {}
 
-_catalog, _current_catalog_url = load_catalog(url=DEFAULT_CATALOG_URL)
+_catalog = load_catalog(url=DEFAULT_CATALOG_URL)
 
 
 def _get_projected_xy_point(lon: float, lat: float, projection: str) -> geometry.Point:

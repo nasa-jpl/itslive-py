@@ -1,7 +1,11 @@
 # Changelog
 
 ## [Unreleased]
-* features:
+
+* [v0.3.2] 2024-01-22
+* features
+    * fixed catalog URL 
+    * loosen strict dependencies for cryocloud
     * Added scene pair velocity search and download API
     * Terminal plot can be consolidated or grouped by satellite
 

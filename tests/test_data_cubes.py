@@ -13,17 +13,17 @@ valid_lat_lons = [
     (
         75.0,
         -45.1,
-        f"{base_url}/v02/N70W040/ITS_LIVE_vel_EPSG3413_G0120_X-50000_Y-1650000.zarr",
+        f"{base_url}/v2/N70W040/ITS_LIVE_vel_EPSG3413_G0120_X-50000_Y-1650000.zarr",
     ),
     (
         -76.1,
         -10.0,
-        f"{base_url}/v02/S70W000/ITS_LIVE_vel_EPSG3031_G0120_X-250000_Y1450000.zarr",
+        f"{base_url}/v2/S70W000/ITS_LIVE_vel_EPSG3031_G0120_X-250000_Y1450000.zarr",
     ),
     (
         33.5,
         76.2,
-        f"{base_url}/v02/N30E070/ITS_LIVE_vel_EPSG32643_G0120_X650000_Y3750000.zarr",
+        f"{base_url}/v2/N30E070/ITS_LIVE_vel_EPSG32643_G0120_X650000_Y3750000.zarr",
     ),
 ]
 
@@ -50,7 +50,7 @@ def test_we_can_verify_version():
 
 
 def test_load_default_cube():
-    catalog, url = cubes.load_catalog()
+    catalog = cubes.load_catalog()
     assert type(catalog) is dict
 
 

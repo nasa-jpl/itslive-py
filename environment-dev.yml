@@ -3,9 +3,27 @@ channels:
   - conda-forge
 dependencies:
   - python=3.9.*
+  - jupyterlab
   - mamba
   - cartopy
+  - fiona
+  - geopandas
+  - ipyleaflet
+  - matplotlib-base
+  - pyproj
+  - ipympl
+  - pandas
+  - numpy
+  - s3fs
+  - sidecar
+  - shapely
+  - xarray
+  - markdown
+  - voila
+  - zarr
   - pip
   - pip:
+    - git+https://github.com/nasa-jpl/itslive-py.git
+    - utm
     - pynvim
     - "poetry>=1.2"
