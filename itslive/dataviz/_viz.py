@@ -20,11 +20,24 @@ def plot_terminal(
     """Plots a variable from a given lon, lat in the terminal"""
     plotext.date_form("Y-m-d")
     # the beauty of pandas + xarray
+
     ts = dataset[variable].to_pandas().sort_index()
+    ts = (
+        ts[~ts.index.duplicated(keep="first")]
+        .resample("M")
+        .max()
+        .fillna(method="ffill")
+    )
+
     dates = [d for d in ts.index.to_pydatetime()]
-    values = [float(v[0]) for v in ts.values]
-    xticks = [i for i in range(0, len(dates))]
-    xlabels = [d.strftime("%Y/%m") for d in dates]
+    values = [float(v) for v in ts[variable].sort_index().values]
+
+    # Plot using Plotext
+
+    xticks = [
+        i for i, d in enumerate(dates) if d.month == 1
+    ]  # Show xticks at the beginning of each year
+    xlabels = [dates[i].strftime("%Y") for i in xticks]
     plotext.xticks(xticks, xlabels)
     plotext.plot(values)
     plotext.show()
