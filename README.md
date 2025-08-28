@@ -1,3 +1,6 @@
+[![Citation](https://zenodo.org/badge/486012726.svg)](https://doi.org/10.5281/zenodo.16969191)
+
+
 # ITS_LIVEpy
 
 # A Python client for ITSLIVE glacier velocity data.
