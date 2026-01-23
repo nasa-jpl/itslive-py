@@ -19,6 +19,9 @@ from shapely import geometry
 
 import itslive.velocity_cubes as vc
 
+# for checking s3 catalog modification date and local cache file date
+import boto3
+from datetime import datetime,timezone
 
 # class to throw time series lookup errors
 class timeseriesException(Exception):
@@ -38,6 +41,40 @@ def load_catalog(url: str = DEFAULT_CATALOG_URL, reload: bool = False):
     if url is not provided will load the default location on S3
         returns catalog,catalog_url
     """
+    
+    DEFAULT_CATALOG_CACHE_PATH = pathlib.Path.home() / ".itslive_catalog.json"
+    
+    if 's3.amazonaws.com' in url:
+
+        #Get modification date of s3 object
+        s3 = boto3.client('s3')
+
+        s3_catalog_url = url.replace("https://its-live-data.s3.amazonaws.com/", "s3://its-live-data/")
+        bucket_name = s3_catalog_url.split('/')[2]
+        object_key = '/'.join(s3_catalog_url.split('/')[3:])    
+        # bucket_name = 'its-live-data'
+        # object_key = 'datacubes/catalog_v02.json'
+
+        response = s3.head_object(Bucket=bucket_name, Key=object_key)
+        modification_date = response['LastModified']
+
+        # check local catalog cache file modification date
+        
+        # find modification date in UTC of local catalog cache file
+        if DEFAULT_CATALOG_CACHE_PATH.exists():
+            local_mod_time = DEFAULT_CATALOG_CACHE_PATH.stat().st_mtime
+            local_mod_datetime = datetime.fromtimestamp(local_mod_time, tz=timezone.utc)
+            if local_mod_datetime < modification_date:
+                print("Local catalog cache file is older than S3 catalog file. Reloading from S3")
+                reload=True
+            else:
+                print(f"Local catalog cache file {DEFAULT_CATALOG_CACHE_PATH} is up to date. Loading from local cache")
+                reload=False
+        else:
+            print("Local catalog cache file does not exist. Loading from S3")
+            
+
+
     if DEFAULT_CATALOG_CACHE_PATH.exists() and not reload:
         with open(DEFAULT_CATALOG_CACHE_PATH, "r") as f:
             _catalog = json.load(f)
@@ -92,7 +129,46 @@ def _merge_default_variables(variables: List[str]) -> set[str]:
     query_variables.update(variables)
     return query_variables
 
-    return []
+
+def _merge_default_composite_variables(variables: List[str]) -> set[str]:
+    """Default variables for annual composite datasets."""
+    _default_variables = [
+        # Time-varying (per year)
+        "v",
+        "v_error",
+        "vx",
+        "vx_error",
+        "vy",
+        "vy_error",
+        "count",
+        # Climatological (2014-2024 summary)
+        "v0",
+        "v0_error",
+        "vx0",
+        "vx0_error",
+        "vy0",
+        "vy0_error",
+        "dv_dt",
+        "dvx_dt",
+        "dvy_dt",
+        "v_amp",
+        "v_amp_error",
+        "vx_amp",
+        "vx_amp_error",
+        "vy_amp",
+        "vy_amp_error",
+        "v_phase",
+        "vx_phase",
+        "vy_phase",
+        "count0",
+        "outlier_percent",
+        # Masks
+        "landice",
+        "floatingice",
+    ]
+    query_variables = set(_default_variables)
+    query_variables.update(variables)
+    return query_variables
 
 
 def find(
@@ -222,7 +298,8 @@ def get_time_series(
                 xr_da = _open_cubes[cube_s3_url]
             else:
                 xr_da = xr.open_dataset(
-                    cube_s3_url, engine="zarr", storage_options={"anon": True}
+                    cube_s3_url, engine="zarr", storage_options={"anon": True},
+                    decode_timedelta=True
                 )
                 _open_cubes[cube_s3_url] = xr_da
             time_series = xr_da[variables].sel(
@@ -255,6 +332,85 @@ def get_time_series(
                         "time_series": time_series,
                     }
                 )
+
+    return velocity_ts
+
+
+def get_annual_time_series(
+    points: List[tuple[float, float]], variables: List[str] = ["v"]
+) -> List[Dict[str, Any]]:
+    """
+    For the points in the list, returns annual composite velocity time series.
+
+    :params points: List of (lon, lat) coordinates (EPSG:4326)
+    :params variables: list of variables to be included: v, vx, vy etc.
+    :returns: list of dictionaries with coordinates and xarray time series
+              Datasets from annual composites
+    """
+    velocity_ts: List = []
+    variables = _merge_default_composite_variables(variables)
+
+    for point in points:
+        lon = point[0]
+        lat = point[1]
+        results = find_by_point(lon, lat)
+
+        if len(results):
+            cube = results[0]
+            properties = cube.get("properties") if isinstance(cube, dict) else None
+            if not properties:
+                rprint(
+                    f"[yellow]No 'properties' found for cube at point ({lon}, {lat}); "
+                    "skipping annual composite time series for this point.[/yellow]"
+                )
+                continue
+            composite_url = properties.get("composite_zarr_url")
+            if not composite_url:
+                rprint(
+                    f"[yellow]'composite_zarr_url' not available for cube at point ({lon}, {lat}); "
+                    "skipping annual composite time series for this point.[/yellow]"
+                )
+                continue
+            projection = properties["epsg"]
+            composite_s3_url = composite_url.replace("http:", "s3:").replace(
+                ".s3.amazonaws.com", ""
+            )
+            projected_point = _get_projected_xy_point(lon, lat, projection)
+
+            # Use cached dataset or open new one
+            if composite_s3_url in _open_cubes:
+                xr_da = _open_cubes[composite_s3_url]
+            else:
+                xr_da = xr.open_dataset(
+                    composite_s3_url, engine="zarr",
+                    storage_options={"anon": True},
+                    decode_timedelta=True
+                )
+                _open_cubes[composite_s3_url] = xr_da
+
+            time_series = xr_da[variables].sel(
+                x=projected_point.x, y=projected_point.y, method="nearest"
+            )
+
+            if time_series is not None and isinstance(time_series, xr.Dataset):
+                x_off = time_series.x.values - projected_point.x
+                y_off = time_series.y.values - projected_point.y
+                ll_pt = _get_geographic_point_from_projected(
+                    time_series.x.values, time_series.y.values, projection
+                )
+
+                velocity_ts.append({
+                    "requested_point_geographic_coordinates": (lon, lat),
+                    "returned_point_geographic_coordinates": (ll_pt.x, ll_pt.y),
+                    "returned_point_projected_coordinates": {
+                        "epsg": projection,
+                        "coords": (time_series.x.values, time_series.y.values),
+                    },
+                    "returned_point_offset_from_requested_in_projection_meters": np.sqrt(
+                        x_off**2 + y_off**2
+                    ),
+                    "time_series": time_series,
+                })
 
     return velocity_ts
 
