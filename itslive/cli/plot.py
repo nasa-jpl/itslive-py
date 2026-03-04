@@ -91,7 +91,7 @@ def plot_time_series(points, variable, operation, freq, outdir, stdout):
 
 
 def list_variables():
-    itslive.cubes.list_variables()
+    itslive.velocity_cubes.list_variables()
 
 
 @click.command()
@@ -108,7 +108,7 @@ def list_variables():
     not_required_if=["lat", "lon"],
     type=click.Path(),
     callback=validate_csv,
-    help="[magenta bold]Input csv file[/]. [dim] \[format: comma separated lon,lat coordinates][/]",
+    help="[magenta bold]Input csv file[/]. [dim] [format: comma separated lon,lat coordinates][/]",
 )
 @click.option(
     "--lat",

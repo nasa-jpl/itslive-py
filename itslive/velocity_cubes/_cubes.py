@@ -86,6 +86,31 @@ def _datacube_to_composite_url(datacube_url: str) -> str:
     )
 
 
+def list_variables() -> None:
+    """Print the available datacube variables."""
+    from rich.table import Table
+
+    table = Table(title="Available ITS_LIVE datacube variables")
+    table.add_column("Variable", style="cyan")
+    table.add_column("Description")
+
+    _variables = {
+        "v": "Ice velocity magnitude [m/yr]",
+        "v_error": "Ice velocity magnitude error [m/yr]",
+        "vx": "Ice velocity x-component [m/yr]",
+        "vx_error": "Ice velocity x-component error [m/yr]",
+        "vy": "Ice velocity y-component [m/yr]",
+        "vy_error": "Ice velocity y-component error [m/yr]",
+        "date_dt": "Time separation between image pair [days]",
+        "satellite_img1": "Satellite name for image 1",
+        "mission_img1": "Mission name for image 1",
+    }
+    for var, desc in _variables.items():
+        table.add_row(var, desc)
+
+    rprint(table)
+
+
 def _merge_default_variables(variables: List[str]) -> set[str]:
     _default_variables = [
         "v",
