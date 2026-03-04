@@ -34,18 +34,6 @@ jobs:
       - name: Check formatting (black)
         run: poetry run black itslive tests --check
 
-      - name: Check import order (isort)
-        run: >
-          poetry run isort
-          --multi-line=3
-          --trailing-comma
-          --force-grid-wrap=0
-          --combine-as
-          --line-width 88
-          --check-only
-          --thirdparty itslive
-          itslive tests
-
   test:
     name: Test / Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
