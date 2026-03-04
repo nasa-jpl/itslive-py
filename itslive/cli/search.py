@@ -5,7 +5,7 @@ import sys
 import json
 import csv
 
-from itslive.search import EQ, GTE, LTE, GT, LT, NEQ, PropertyFilter
+from itslive.search import EQ, GTE, LTE, GT, LT, NEQ
 
 # Use Rich markup
 click.rich_click.USE_RICH_MARKUP = True
@@ -41,17 +41,20 @@ class Mutex(click.Option):
 def validate_bbox(ctx, param, value):
     if value:
         try:
-            parts = [float(x) for x in value.split(',')]
+            parts = [float(x) for x in value.split(",")]
             if len(parts) != 4:
                 raise ValueError
-            if not (-180 <= parts[0] <= 180 and -90 <= parts[1] <= 90 and
-                    -180 <= parts[2] <= 180 and -90 <= parts[3] <= 90):
+            if not (
+                -180 <= parts[0] <= 180
+                and -90 <= parts[1] <= 90
+                and -180 <= parts[2] <= 180
+                and -90 <= parts[3] <= 90
+            ):
                 raise ValueError
             return parts
         except ValueError:
             raise click.BadParameter(
-                "bbox must be 'min_lon,min_lat,max_lon,max_lat' "
-                "e.g., -50,65,-40,75"
+                "bbox must be 'min_lon,min_lat,max_lon,max_lat' " "e.g., -50,65,-40,75"
             )
     return value
 
@@ -59,7 +62,7 @@ def validate_bbox(ctx, param, value):
 def validate_polygon(ctx, param, value):
     if value:
         try:
-            parts = [float(x) for x in value.split(',')]
+            parts = [float(x) for x in value.split(",")]
             if len(parts) < 6 or len(parts) % 2 != 0:
                 raise ValueError
             return parts
@@ -85,47 +88,47 @@ def validate_date(ctx, param, value):
 def validate_filter(ctx, param, value):
     """
     Parse filter string(s) in format 'property:operator:value'.
-    
+
     When used with multiple=True, this receives a tuple of filter strings.
-    
+
     Examples:
         - platform:=:S2          # platform equals S2
         - percent_valid_pixels:>:50  # percent_valid_pixels greater than 50
         - created:>=:2020-01-01 # created on or after date
         - version:!=:002         # version not equal to 002
-    
+
     Operators: = (equals), >= (greater or equal), <= (less or equal),
                 > (greater), < (less), != (not equal)
-    
+
     Returns:
         List of tuples: [(property_name, PropertyFilter), ...]
     """
     if not value:
         return None
-    
+
     result = []
-    
+
     for filter_str in value:
         try:
-            parts = filter_str.split(':', 2)
+            parts = filter_str.split(":", 2)
             if len(parts) != 3:
                 raise ValueError(f"Invalid filter format in '{filter_str}'")
-            
+
             prop_name, op, value_str = parts
-            
+
             # Map operator strings to filter helpers
             op_map = {
-                '=': EQ,
-                '>=': GTE,
-                '<=': LTE,
-                '>': GT,
-                '<': LT,
-                '!=': NEQ,
+                "=": EQ,
+                ">=": GTE,
+                "<=": LTE,
+                ">": GT,
+                "<": LT,
+                "!=": NEQ,
             }
-            
+
             if op not in op_map:
                 raise ValueError(f"Invalid operator: {op} in filter '{filter_str}'")
-            
+
             # Parse value (try int, then float, then string)
             try:
                 parsed_value = int(value_str)
@@ -135,7 +138,7 @@ def validate_filter(ctx, param, value):
                 except ValueError:
                     # Keep as string
                     parsed_value = value_str
-            
+
             result.append((prop_name, op_map[op](parsed_value)))
         except ValueError as e:
             raise click.BadParameter(
@@ -144,7 +147,7 @@ def validate_filter(ctx, param, value):
                 "(e.g., platform:=:S2 or percent_valid_pixels:>:50). "
                 "Valid operators: =, >=, <=, >, <, !="
             )
-    
+
     return result
 
 
@@ -242,7 +245,7 @@ def validate_filter(ctx, param, value):
     default=1,
     show_default=True,
     help="H3 hexagonal resolution [dim]default: 1 (finer), 2 (coarser)[/]. "
-         "[dim]Only used with --partition-type h3[/]",
+    "[dim]Only used with --partition-type h3[/]",
 )
 @click.option(
     "--overlap",
@@ -344,13 +347,13 @@ def search(
       $ itslive-search --bbox -50,65,-40,75 --count-only
     """
     import itslive
-    
+
     # Build custom filters dict from --filter options
     custom_filters = {}
     if filters:
         for prop_name, prop_filter in filters:
             custom_filters[prop_name] = prop_filter
-    
+
     # Prepare kwargs for search
     stac_kwargs = {
         "collection": collection,
@@ -361,15 +364,15 @@ def search(
         "use_hive_partitions": use_hive_partitions,
         "filters": custom_filters if custom_filters else None,
     }
-    
+
     if base_catalog_href:
         stac_kwargs["base_catalog_href"] = base_catalog_href
-    
+
     # Validate required parameters
     if not bbox and not polygon:
         rprint("[red]Error: Either --bbox or --polygon is required[/]")
         sys.exit(1)
-    
+
     # Build geometry parameter
     if polygon:
         geometry_arg = polygon
@@ -377,7 +380,7 @@ def search(
     else:
         geometry_arg = None
         bbox_arg = bbox
-    
+
     # Perform streaming search
     url_generator = itslive.velocity_pairs.find_streaming(
         bbox=bbox_arg,
@@ -389,49 +392,48 @@ def search(
         min_interval=min_interval,
         max_interval=max_interval,
         engine=engine,
-        **stac_kwargs
+        **stac_kwargs,
     )
-    
+
     # Stream results to stdout
     if not quiet:
         rprint(f"[dim]Using {engine.upper()} engine[/]")
-    
+
     if format == "json":
         urls_list = []
         for url in url_generator:
             urls_list.append(url)
-        
+
         if count_only:
             print(len(urls_list))
         else:
             print(json.dumps(urls_list, indent=2))
-    
+
     elif format == "csv":
-        import requests
-        
+
         writer = None
         for i, url in enumerate(url_generator):
             if count_only:
                 pass
             else:
                 # Extract filename from URL
-                filename = url.split('/')[-1]
-                
+                filename = url.split("/")[-1]
+
                 if writer is None:
                     writer = csv.writer(sys.stdout)
-                    writer.writerow(['url', 'filename'])
-                
+                    writer.writerow(["url", "filename"])
+
                 writer.writerow([url, filename])
-        
+
         if count_only and url_generator:
             print(i + 1)
-    
+
     else:  # url format (default)
         count = 0
         for url in url_generator:
             count += 1
             if not count_only:
                 print(url)
-        
+
         if not quiet:
             rprint(f"[green]Total URLs: {count}[/]")

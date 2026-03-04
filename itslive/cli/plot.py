@@ -171,7 +171,7 @@ def plot(itslive_catalog, input_coordinates, lat, lon, variable, agg, outdir, st
     """
 
     points = []
-    rprint(f"Using STAC catalog: https://stac.itslive.cloud/")
+    rprint("Using STAC catalog: https://stac.itslive.cloud/")
     if input_coordinates is not None:
         # rprint(f"input file head: {input.head}")
         for index, row in input_coordinates.iterrows():

@@ -25,7 +25,7 @@ def plot_terminal(
     color_by_sensor: bool = True,
 ) -> None:
     """Plots one or more variables from a given lon, lat in the terminal
-    
+
     Args:
         lon: Longitude coordinate
         lat: Latitude coordinate
@@ -47,7 +47,7 @@ def plot_terminal(
         "v0": "Climatological Velocity (m/yr)",
         "dv_dt": "Velocity Change (m/yr²)",
     }
-    
+
     satellite_labels = {
         "1": "S1",
         "2": "S2",
@@ -57,7 +57,7 @@ def plot_terminal(
         "8": "L8",
         "9": "L9",
     }
-    
+
     plot_colors = [
         "red",
         "blue",
@@ -66,28 +66,23 @@ def plot_terminal(
         "magenta",
         "cyan",
     ]
-    
+
     for var_idx, variable in enumerate(variables):
         if variable not in dataset:
             print(f"Warning: Variable '{variable}' not found in dataset")
             continue
-        
+
         # Convert to pandas and process
         ts = dataset[variable].to_pandas().sort_index()
-        ts = (
-            ts[~ts.index.duplicated(keep="first")]
-            .resample("ME")
-            .max()
-            .ffill()
-        )
+        ts = ts[~ts.index.duplicated(keep="first")].resample("ME").max().ffill()
 
         date_strs = [d.strftime("%Y-%m-%d") for d in ts.index.to_pydatetime()]
         values = [float(v) for v in ts.values]
-        
+
         # Set title and labels
         title = f"ITS_LIVE: {var_labels.get(variable, variable)}"
         subtitle = f"Location: ({lon:.4f}, {lat:.4f})"
-        
+
         # Compute year-based xtick positions using plotext's date string API
         if date_strs:
             min_year = ts.index[0].year
@@ -107,14 +102,14 @@ def plot_terminal(
         plotext.title(f"{title} | {subtitle}")
         plotext.ylabel(var_labels.get(variable, variable))
         plotext.xlabel("Date")
-        
+
         # Plot with different colors if multiple variables — use date strings
         # so plotext's native date axis handles tick spacing correctly
         color = plot_colors[var_idx % len(plot_colors)] if len(variables) > 1 else "red"
         plotext.plot(date_strs, values, marker="braille", color=color, label=variable)
-        
+
         plotext.show()
-        
+
         # Add statistics after the plot (filter out NaN values)
         valid_values = [v for v in values if not pd.isna(v)]
         if valid_values:
@@ -124,7 +119,7 @@ def plot_terminal(
             print(f"  Mean: {mean_val:.2f} m/yr")
             print(f"  Max:  {max_val:.2f} m/yr")
             print(f"  N:    {len(valid_values)} data points")
-        
+
         # Color by satellite if requested and satellite data is available
         if color_by_sensor and "satellite_img1" in dataset:
             print(f"\nSatellite Distribution for {variable}:")
@@ -133,7 +128,7 @@ def plot_terminal(
             for sat, count in zip(unique_sats, counts):
                 sat_label = satellite_labels.get(str(sat), str(sat))
                 print(f"  {sat_label}: {count} observations")
-        
+
         print()  # Add spacing between variables
 
 

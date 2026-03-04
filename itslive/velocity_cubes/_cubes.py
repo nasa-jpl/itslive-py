@@ -1,15 +1,12 @@
 # to get and use geojson datacube catalog
 # for timing data access
-import json
 import logging
-import pathlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 import numpy as np
 import pyproj
-import requests
 
 # for datacube xarray/zarr access
 import xarray as xr
@@ -19,7 +16,6 @@ from rich import print as rprint
 from rich.progress import track
 from shapely import geometry
 
-import itslive.velocity_cubes as vc
 
 # class to throw time series lookup errors
 class timeseriesException(Exception):
@@ -152,9 +148,11 @@ def find_by_bbox(
     :returns: list of URLs for the matching Zarr cubes.
     """
     from shapely.geometry import mapping, box
-    
-    box_geom = mapping(box(lower_left_lon, lower_left_lat, upper_right_lon, upper_right_lat))
-    
+
+    box_geom = mapping(
+        box(lower_left_lon, lower_left_lat, upper_right_lon, upper_right_lat)
+    )
+
     stac_params = {
         "start_date": "2000-01-01",
         "end_date": "2025-12-31",
@@ -165,23 +163,29 @@ def find_by_bbox(
         "asset_type": ".zarr",
         "filters": {},
     }
-    
+
     try:
         zarr_urls = serverless_search(**stac_params)
-        
+
         cubes = []
         for url in zarr_urls:
-            cubes.append({
-                "type": "Feature",
-                "geometry": box_geom,
-                "properties": {
-                    "zarr_url": url,
-                    "composite_zarr_url": url.replace(".zarr", "_composite.zarr") if "_composite" not in url else "",
-                    "epsg": "3413",
-                    "geometry_epsg": box_geom,
+            cubes.append(
+                {
+                    "type": "Feature",
+                    "geometry": box_geom,
+                    "properties": {
+                        "zarr_url": url,
+                        "composite_zarr_url": (
+                            url.replace(".zarr", "_composite.zarr")
+                            if "_composite" not in url
+                            else ""
+                        ),
+                        "epsg": "3413",
+                        "geometry_epsg": box_geom,
+                    },
                 }
-            })
-        
+            )
+
         return cubes
     except Exception as e:
         logging.error(f"Error searching STAC catalog: {e}")
@@ -197,9 +201,9 @@ def find_by_point(lon: float, lat: float) -> List[Dict[str, Any]]:
     :returns: geojson dictionary with matching cube
     """
     from shapely.geometry import mapping
-    
+
     point_geom = mapping(geometry.Point(lon, lat))
-    
+
     stac_params = {
         "start_date": "2000-01-01",
         "end_date": "2025-12-31",
@@ -210,23 +214,29 @@ def find_by_point(lon: float, lat: float) -> List[Dict[str, Any]]:
         "asset_type": ".zarr",
         "filters": {},
     }
-    
+
     try:
         zarr_urls = serverless_search(**stac_params)
-        
+
         cubes = []
         for url in zarr_urls:
-            cubes.append({
-                "type": "Feature",
-                "geometry": point_geom,
-                "properties": {
-                    "zarr_url": url,
-                    "composite_zarr_url": url.replace(".zarr", "_composite.zarr") if "_composite" not in url else "",
-                    "epsg": "3413",
-                    "geometry_epsg": point_geom,
+            cubes.append(
+                {
+                    "type": "Feature",
+                    "geometry": point_geom,
+                    "properties": {
+                        "zarr_url": url,
+                        "composite_zarr_url": (
+                            url.replace(".zarr", "_composite.zarr")
+                            if "_composite" not in url
+                            else ""
+                        ),
+                        "epsg": "3413",
+                        "geometry_epsg": point_geom,
+                    },
                 }
-            })
-        
+            )
+
         return cubes
     except Exception as e:
         logging.error(f"Error searching STAC catalog: {e}")
@@ -241,9 +251,9 @@ def find_by_polygon(points: List[tuple[float, float]] = []) -> List[Dict[str, An
     :returns: list of URLs for the matching Zarr cubes
     """
     from shapely.geometry import mapping, Polygon
-    
+
     polygon_geom = mapping(Polygon(points))
-    
+
     stac_params = {
         "start_date": "2000-01-01",
         "end_date": "2025-12-31",
@@ -254,23 +264,29 @@ def find_by_polygon(points: List[tuple[float, float]] = []) -> List[Dict[str, An
         "asset_type": ".zarr",
         "filters": {},
     }
-    
+
     try:
         zarr_urls = serverless_search(**stac_params)
-        
+
         cubes = []
         for url in zarr_urls:
-            cubes.append({
-                "type": "Feature",
-                "geometry": polygon_geom,
-                "properties": {
-                    "zarr_url": url,
-                    "composite_zarr_url": url.replace(".zarr", "_composite.zarr") if "_composite" not in url else "",
-                    "epsg": "3413",
-                    "geometry_epsg": polygon_geom,
+            cubes.append(
+                {
+                    "type": "Feature",
+                    "geometry": polygon_geom,
+                    "properties": {
+                        "zarr_url": url,
+                        "composite_zarr_url": (
+                            url.replace(".zarr", "_composite.zarr")
+                            if "_composite" not in url
+                            else ""
+                        ),
+                        "epsg": "3413",
+                        "geometry_epsg": polygon_geom,
+                    },
                 }
-            })
-        
+            )
+
         return cubes
     except Exception as e:
         logging.error(f"Error searching STAC catalog: {e}")
@@ -306,6 +322,7 @@ def get_time_series(
                 xr_da = _open_cubes[cube_url]
             else:
                 import s3fs
+
                 fs = s3fs.S3FileSystem(anon=True)
                 mapper = fs.get_mapper(cube_s3_url.replace("https://", "s3://"))
                 xr_da = xr.open_zarr(mapper, decode_timedelta=True)
@@ -388,6 +405,7 @@ def get_annual_time_series(
                 xr_da = _open_cubes[composite_url_https]
             else:
                 import s3fs
+
                 fs = s3fs.S3FileSystem(anon=True)
                 mapper = fs.get_mapper(composite_s3_url.replace("https://", "s3://"))
                 xr_da = xr.open_zarr(mapper, decode_timedelta=True)
@@ -404,18 +422,20 @@ def get_annual_time_series(
                     time_series.x.values, time_series.y.values, projection
                 )
 
-                velocity_ts.append({
-                    "requested_point_geographic_coordinates": (lon, lat),
-                    "returned_point_geographic_coordinates": (ll_pt.x, ll_pt.y),
-                    "returned_point_projected_coordinates": {
-                        "epsg": projection,
-                        "coords": (time_series.x.values, time_series.y.values),
-                    },
-                    "returned_point_offset_from_requested_in_projection_meters": np.sqrt(
-                        x_off**2 + y_off**2
-                    ),
-                    "time_series": time_series,
-                })
+                velocity_ts.append(
+                    {
+                        "requested_point_geographic_coordinates": (lon, lat),
+                        "returned_point_geographic_coordinates": (ll_pt.x, ll_pt.y),
+                        "returned_point_projected_coordinates": {
+                            "epsg": projection,
+                            "coords": (time_series.x.values, time_series.y.values),
+                        },
+                        "returned_point_offset_from_requested_in_projection_meters": np.sqrt(
+                            x_off**2 + y_off**2
+                        ),
+                        "time_series": time_series,
+                    }
+                )
 
     return velocity_ts
 
@@ -589,11 +609,7 @@ def plot_time_series_terminal(
             plot_terminal(lon, lat, ts, variable)
             # Exclude zeros and NaNs when computing meaningful max
             valid = ts[variable].where(ts[variable] > 0)
-            max_variable = (
-                valid
-                .where(valid == valid.max(), drop=True)
-                .squeeze()
-            )
+            max_variable = valid.where(valid == valid.max(), drop=True).squeeze()
             max_value = max_variable[variable[0]].values
 
             rprint(f"Max {variable} on {max_variable['mid_date'].values}: {max_value}")

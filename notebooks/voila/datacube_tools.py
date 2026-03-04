@@ -1,15 +1,18 @@
 # to get and use geojson datacube catalog
 import json
 import logging
+
 # for timing data access
 import time
 
 import numpy as np
 import pyproj
 import s3fs as s3
+
 # for datacube xarray/zarr access
 import xarray as xr
 from pyproj import Transformer
+
 # for plotting time series
 from shapely import geometry
 
@@ -59,7 +62,6 @@ class DATACUBETOOLS:
         self.json_catalog = self._json_all
 
     def load_elevation_timeseries(self, lon, lat):
-
         x_projected, y_projected = self.transformer_3031.transform(lon, lat)
         ts = (
             self.elevation_dataset["dh"]
@@ -169,7 +171,7 @@ class DATACUBETOOLS:
                 # now reproject this point to lat lon and look for new feature
                 if "data_epsg" in cubefeature["properties"]:
                     epsg_source = cubefeature["properties"]["data_epsg"]
-                elif "projection" in cubefeaturea["properties"]:
+                elif "projection" in cubefeature["properties"]:
                     epsg_source = cubefeature["properties"]["projection"]
                 else:
                     epsg_source = None
@@ -179,7 +181,7 @@ class DATACUBETOOLS:
                     return None
 
                 cubePROJtoLL = pyproj.Transformer.from_proj(
-                    f'{cubefeature["properties"]["data_epsg"]}',
+                    f"{cubefeature['properties']['data_epsg']}",
                     "epsg:4326",
                     always_xy=True,
                 )
@@ -292,7 +294,7 @@ class DATACUBETOOLS:
         )
 
         logging.info(
-            f"xarray open - elapsed time: {(time.time()-start):10.2f}", flush=True
+            f"xarray open - elapsed time: {(time.time() - start):10.2f}", flush=True
         )
 
         # pull data to local machine
@@ -320,9 +322,9 @@ class DATACUBETOOLS:
         smallcube_gt[3] = smallcube.y.max().item() - (
             smallcube_gt[5] / 2.0
         )  # set new ul y value
-        smallcube[
-            "mapping"
-        ] = largecube.mapping  # still need to add new GeoTransform as string
+        smallcube["mapping"] = (
+            largecube.mapping
+        )  # still need to add new GeoTransform as string
         smallcube.mapping["GeoTransform"] = " ".join([str(x) for x in smallcube_gt])
         return
 
@@ -425,7 +427,7 @@ class DATACUBETOOLS:
 
         if cube_feature["properties"]["data_epsg"].split(":")[-1] != bbox_epsg_str:
             print(
-                f'bbox is in epsg:{bbox_epsg_str}, should be in datacube {cube_feature["properties"]["data_epsg"]}'
+                f"bbox is in epsg:{bbox_epsg_str}, should be in datacube {cube_feature['properties']['data_epsg']}"
             )
             return None
 
