@@ -1,7 +1,8 @@
-import itslive
 import pandas as pd
 import rich_click as click
 from rich import print as rprint
+
+import itslive
 
 # Use Rich markup
 click.rich_click.USE_RICH_MARKUP = True
@@ -91,19 +92,13 @@ def plot_time_series(points, variable, label_by, outdir, stdout):
 
 @click.command()
 @click.option(
-    "--itslive-catalog",
-    required=False,
-    default="https://its-live-data.s3.amazonaws.com/datacubes/catalog_v02.json",
-    help="GeoJSON catalog with the ITS_LIVE cube metadata",
-)
-@click.option(
     "--input-coordinates",
     required=False,
     cls=Mutex,
     not_required_if=["lat", "lon"],
     type=click.Path(),
     callback=validate_csv,
-    help="[magenta bold]Input csv file[/]. [dim] \[format: comma separated lon,lat coordinates][/]",
+    help="[magenta bold]Input csv file[/]. [dim] [format: comma separated lon,lat coordinates][/]",
 )
 @click.option(
     "--lat",
@@ -148,9 +143,7 @@ def plot_time_series(points, variable, label_by, outdir, stdout):
     is_flag=True,
     help="Verbose output",
 )
-def export(
-    itslive_catalog, input_coordinates, lat, lon, variables, outdir, format, debug
-):
+def export(input_coordinates, lat, lon, variables, outdir, format, debug):
     """
     ITS_LIVE Global Glacier Veolocity
 
@@ -159,12 +152,10 @@ def export(
     """
 
     points = []
-    itslive.velocity_cubes.load_catalog(itslive_catalog)
     if debug:
         rprint("Debug mode is [red]on[/]")
-        rprint(f"Using: {itslive.velocity_cubes._current_catalog_url}")
+        rprint("Using STAC catalog: https://stac.itslive.cloud/")
     if input_coordinates is not None:
-        # rprint(f"input file head: {input.head}")
         for index, row in input_coordinates.iterrows():
             points.append((row["lon"], row["lat"]))
     else:

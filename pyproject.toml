@@ -1,18 +1,19 @@
 [tool.poetry]
 name = "itslive"
 homepage = "https://github.com/nasa-jpl/itslive-py"
-version = "0.3.2"
+version = "0.4.0"
 description = "Python client for ITSLIVE gralcier velocity data"
 authors = ["Luis Lopez <luis.lopez@nsidc.org>"]
 license = "GPL-3.0-only"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 zarr = ">=2.11"
 s3fs = ">=2022.3"
 xarray = ">=2022.3"
 Shapely = ">=1.8"
 pyproj = ">=3.3"
+boto3 = ">=1.28"
 matplotlib = ">=3.6"
 rich-click = ">=1.5"
 plotext=">=0"
@@ -50,10 +51,61 @@ matplotlib = ">=3.3"
 h5netcdf = ">=0.11"
 dask = ">=2022.1"
 
+[tool.poetry.extras]
+dev = [
+    "black",
+    "isort",
+    "pylint",
+    "pytest",
+    "pytest-watch",
+    "responses",
+    "autoflake",
+    "types-requests",
+    "types-setuptools",
+]
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+    "markdown-callouts",
+    "markdown-include",
+    "mkdocstrings",
+    "mkdocs-jupyter",
+    "pymdown-extensions",
+    "pygments",
+    "ipywidgets",
+    "widgetsnbextension",
+    "jupyterlab",
+    "ipympl",
+    "h5netcdf",
+    "dask",
+]
+
 [tool.poetry.scripts]
 itslive-export = "itslive.cli.export:export"
 itslive-plot = "itslive.cli.plot:plot"
+itslive-search = "itslive.cli.search:search"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: marks tests that require live network access (deselect with '-m not integration')",
+    "unit: marks fast, offline unit tests",
+]
+addopts = "-v --tb=short"
+
+[tool.bumpversion]
+current_version = "0.4.0"
+commit = true
+tag = true
+tag_name = "v{new_version}"
+commit_args = "--no-verify"
+message = "chore: bump version from {current_version} to {new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
