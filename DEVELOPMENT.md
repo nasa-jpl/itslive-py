@@ -19,25 +19,47 @@ understanding how CI and documentation builds work.
 ## Prerequisites
 
 - Python 3.10 or newer
-- [Poetry](https://python-poetry.org/docs/#installation) for dependency management
-- [bump-my-version](https://callowayproject.github.io/bump-my-version/) for releasing
+- [Poetry](https://python-poetry.org/docs/#installation) _(recommended)_ or pip
+- [pipx](https://pipx.pypa.io/) for installing CLI tools globally
 
 ```bash
-pip install poetry bump-my-version
+pip install pipx
+pipx install bump-my-version
 ```
 
 ---
 
 ## Local Setup
 
+### With Poetry (recommended)
+
 ```bash
 git clone https://github.com/nasa-jpl/itslive-py.git
 cd itslive-py
+pip install poetry
 poetry install
 ```
 
-This installs the package in editable mode along with all development dependencies
-declared in `pyproject.toml`.
+All development tools (`bump-my-version`, `black`, `isort`, `pytest`, etc.) and
+docs dependencies are installed automatically.
+
+### With pip
+
+```bash
+git clone https://github.com/nasa-jpl/itslive-py.git
+cd itslive-py
+
+# Core package + dev tools (linting, testing, versioning)
+pip install -e ".[dev]"
+
+# Also install docs dependencies
+pip install -e ".[dev,docs]"
+```
+
+The `dev` extra includes: `bump-my-version`, `black`, `isort`, `pylint`,
+`pytest`, `responses`, and type stubs.  
+The `docs` extra adds: `mkdocs`, `mkdocs-material`, `mkdocstrings`, and notebook
+dependencies.
 
 ---
 
