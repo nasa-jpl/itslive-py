@@ -27,6 +27,13 @@ class timeseriesException(Exception):
 STAC_CATALOG_URL = "https://stac.itslive.cloud/"
 STAC_COLLECTION = "itslive-cubes"
 
+# Annual composite path configuration
+# Composites live under a separate prefix with a different versioning scheme.
+# e.g. datacube:  .../datacubes/v2-updated-october2024/{REGION}/ITS_LIVE_vel_{EPSG}_G0120_{XY}.zarr
+#      composite: .../composites/annual/v2-updated-september2025/{REGION}/ITS_LIVE_velocity_{EPSG}_120m_{XY}.zarr
+COMPOSITE_VERSION = "v2-updated-september2025"
+_ITS_LIVE_BASE_URL = "https://its-live-data.s3.amazonaws.com/"
+
 
 # keep track of open cubes so that we don't re-open (it is slow to re-read xarray metadata
 # and dimension vectors)
@@ -49,6 +56,34 @@ def _get_geographic_point_from_projected(
     )
     point = geometry.Point(*to_ll_reprojection.transform(x, y))
     return point
+
+
+def _datacube_to_composite_url(datacube_url: str) -> str:
+    """Derive the annual composite zarr URL from a datacube zarr URL.
+
+    Datacube pattern:
+        https://its-live-data.s3.amazonaws.com/datacubes/<version>/<REGION>/
+            ITS_LIVE_vel_<EPSG>_G0120_<XY>.zarr
+    Composite pattern:
+        https://its-live-data.s3.amazonaws.com/composites/annual/<COMPOSITE_VERSION>/<REGION>/
+            ITS_LIVE_velocity_<EPSG>_120m_<XY>.zarr
+
+    Returns an empty string if the URL does not match the expected datacube pattern.
+    """
+    import re
+
+    m = re.match(
+        r"(https://its-live-data\.s3\.amazonaws\.com/)datacubes/[^/]+/([^/]+)/"
+        r"ITS_LIVE_vel_(EPSG\d+)_G0120_(X-?\d+_Y-?\d+)\.zarr",
+        datacube_url,
+    )
+    if not m:
+        return ""
+    base, region, epsg, xy = m.groups()
+    return (
+        f"{base}composites/annual/{COMPOSITE_VERSION}/{region}/"
+        f"ITS_LIVE_velocity_{epsg}_120m_{xy}.zarr"
+    )
 
 
 def _merge_default_variables(variables: List[str]) -> set[str]:
@@ -176,11 +211,7 @@ def find_by_bbox(
                     "geometry": box_geom,
                     "properties": {
                         "zarr_url": url,
-                        "composite_zarr_url": (
-                            url.replace(".zarr", "_composite.zarr")
-                            if "_composite" not in url
-                            else ""
-                        ),
+                        "composite_zarr_url": _datacube_to_composite_url(url),
                         "epsg": "3413",
                         "geometry_epsg": box_geom,
                     },
@@ -227,11 +258,7 @@ def find_by_point(lon: float, lat: float) -> List[Dict[str, Any]]:
                     "geometry": point_geom,
                     "properties": {
                         "zarr_url": url,
-                        "composite_zarr_url": (
-                            url.replace(".zarr", "_composite.zarr")
-                            if "_composite" not in url
-                            else ""
-                        ),
+                        "composite_zarr_url": _datacube_to_composite_url(url),
                         "epsg": "3413",
                         "geometry_epsg": point_geom,
                     },
@@ -277,11 +304,7 @@ def find_by_polygon(points: List[tuple[float, float]] = []) -> List[Dict[str, An
                     "geometry": polygon_geom,
                     "properties": {
                         "zarr_url": url,
-                        "composite_zarr_url": (
-                            url.replace(".zarr", "_composite.zarr")
-                            if "_composite" not in url
-                            else ""
-                        ),
+                        "composite_zarr_url": _datacube_to_composite_url(url),
                         "epsg": "3413",
                         "geometry_epsg": polygon_geom,
                     },
@@ -322,12 +345,8 @@ def get_time_series(
             if cube_url in _open_cubes:
                 xr_da = _open_cubes[cube_url]
             else:
-                import s3fs
-
-                fs = s3fs.S3FileSystem(anon=True)
-                mapper = fs.get_mapper(cube_s3_url.replace("https://", "s3://"))
-                xr_da = xr.open_zarr(mapper, decode_timedelta=True)
-                _open_cubes[cube_s3_url] = xr_da
+                xr_da = xr.open_dataset(cube_url, engine="zarr", decode_timedelta=True)
+                _open_cubes[cube_url] = xr_da
             time_series = xr_da[variables].sel(
                 x=projected_point.x, y=projected_point.y, method="nearest"
             )
@@ -405,12 +424,8 @@ def get_annual_time_series(
             if composite_url_https in _open_cubes:
                 xr_da = _open_cubes[composite_url_https]
             else:
-                import s3fs
-
-                fs = s3fs.S3FileSystem(anon=True)
-                mapper = fs.get_mapper(composite_s3_url.replace("https://", "s3://"))
-                xr_da = xr.open_zarr(mapper, decode_timedelta=True)
-                _open_cubes[composite_s3_url] = xr_da
+                xr_da = xr.open_dataset(composite_url_https, engine="zarr", decode_timedelta=True)
+                _open_cubes[composite_url_https] = xr_da
 
             time_series = xr_da[variables].sel(
                 x=projected_point.x, y=projected_point.y, method="nearest"
