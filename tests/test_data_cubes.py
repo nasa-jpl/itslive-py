@@ -49,6 +49,7 @@ def test_we_can_verify_version():
     assert type(itslive.__version__) is str
 
 
+@pytest.mark.integration
 def test_load_default_cube():
     catalog = cubes.load_catalog()
     assert type(catalog) is dict
@@ -61,6 +62,7 @@ def test_load_fails_with_unreachable_url():
         assert len(catalog) > 0
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize("lat, lon, expected_url", valid_lat_lons)
 def test_find_cubes_with_valid_lat_lons(lat, lon, expected_url):
     results = cubes.find_by_point(lon=lon, lat=lat)
@@ -70,6 +72,7 @@ def test_find_cubes_with_valid_lat_lons(lat, lon, expected_url):
         assert cube["properties"]["zarr_url"] == expected_url
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize("lat, lon", invalid_lat_lons)
 def test_find_cubes_with_invalid_lat_lons(lat, lon):
     results = cubes.find_by_point(lat=lat, lon=lon)
@@ -77,8 +80,7 @@ def test_find_cubes_with_invalid_lat_lons(lat, lon):
     assert len(results) == 0
 
 
-# This is more of an integration test as it depends on the catalog and
-# the cubes being in the right location on S3
+@pytest.mark.integration
 def test_get_velocity_time_series_for_a_single_point():
     lat = 70.0
     lon = -49.09

@@ -78,14 +78,14 @@ def export_time_series(points, variables, format, outdir):
 
 
 def plot_time_series(points, variable, operation, freq, outdir, stdout):
-    if stdout is not None:
-        # experimental
-        itslive.velocity_cubes.plot_time_series_terminal(points, variable)
-    else:
+    if outdir is not None:
         pass
         # TODO: save plot on outdir
         # plot = itslive.velocity_cubes.plot_time_series(points, variable, label_by)
         # plot.save()
+    else:
+        # Default: render in terminal
+        itslive.velocity_cubes.plot_time_series_terminal(points, variable)
     return None
 
 
@@ -171,8 +171,7 @@ def plot(itslive_catalog, input_coordinates, lat, lon, variable, agg, outdir, st
     """
 
     points = []
-    current_catalog = itslive.velocity_cubes.load_catalog(itslive_catalog)
-    rprint(f"Using: {itslive_catalog}")
+    rprint(f"Using STAC catalog: https://stac.itslive.cloud/")
     if input_coordinates is not None:
         # rprint(f"input file head: {input.head}")
         for index, row in input_coordinates.iterrows():
@@ -185,8 +184,6 @@ def plot(itslive_catalog, input_coordinates, lat, lon, variable, agg, outdir, st
         aggregation = agg.split("-")
         operation = aggregation[0]
         freq = aggregation[1]
-        print(freq, operation)
-        # print(variable, type(variable), list(variable))
         plot_time_series(points, list(variable), operation, freq, outdir, stdout)
     else:
         rprint(
