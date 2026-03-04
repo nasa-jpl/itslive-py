@@ -424,7 +424,9 @@ def get_annual_time_series(
             if composite_url_https in _open_cubes:
                 xr_da = _open_cubes[composite_url_https]
             else:
-                xr_da = xr.open_dataset(composite_url_https, engine="zarr", decode_timedelta=True)
+                xr_da = xr.open_dataset(
+                    composite_url_https, engine="zarr", decode_timedelta=True
+                )
                 _open_cubes[composite_url_https] = xr_da
 
             time_series = xr_da[variables].sel(
