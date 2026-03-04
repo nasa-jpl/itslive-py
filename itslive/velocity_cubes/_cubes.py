@@ -298,15 +298,12 @@ def get_time_series(
         if len(results):
             cube = results[0]
             projection = cube["properties"]["epsg"]
-            # for zarr store modify URL for use in boto open
             zarr_url = cube["properties"]["zarr_url"]
-            cube_s3_url = zarr_url.replace("http:", "s3:").replace(
-                ".s3.amazonaws.com", ""
-            )
+            cube_url = zarr_url.replace("http://", "https://")
             projected_point = _get_projected_xy_point(lon, lat, projection)
             # if we have already opened this cube, don't open it again
-            if len(_open_cubes) and cube_s3_url in _open_cubes.keys():
-                xr_da = _open_cubes[cube_s3_url]
+            if cube_url in _open_cubes:
+                xr_da = _open_cubes[cube_url]
             else:
                 import s3fs
                 fs = s3fs.S3FileSystem(anon=True)
@@ -383,14 +380,12 @@ def get_annual_time_series(
                 )
                 continue
             projection = properties["epsg"]
-            composite_s3_url = composite_url.replace("http:", "s3:").replace(
-                ".s3.amazonaws.com", ""
-            )
+            composite_url_https = composite_url.replace("http://", "https://")
             projected_point = _get_projected_xy_point(lon, lat, projection)
 
             # Use cached dataset or open new one
-            if composite_s3_url in _open_cubes:
-                xr_da = _open_cubes[composite_s3_url]
+            if composite_url_https in _open_cubes:
+                xr_da = _open_cubes[composite_url_https]
             else:
                 import s3fs
                 fs = s3fs.S3FileSystem(anon=True)
