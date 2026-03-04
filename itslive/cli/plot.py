@@ -1,7 +1,8 @@
-import itslive
 import pandas as pd
 import rich_click as click
 from rich import print as rprint
+
+import itslive
 
 # Use Rich markup
 click.rich_click.USE_RICH_MARKUP = True

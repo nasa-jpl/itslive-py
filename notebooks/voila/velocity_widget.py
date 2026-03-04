@@ -9,19 +9,17 @@ from uuid import uuid4
 import ipyleaflet
 import ipywidgets
 import markdown
+import matplotlib.dates as pldates
 import numpy as np
 import pandas as pd
-import matplotlib.dates as pldates
-
+# import itslive datacube tools for working with cloun-based datacubes
+from datacube_tools import DATACUBETOOLS as dctools
 # to get and use geojson datacube catalog
 # for datacube xarray/zarr access
 from IPython.display import display
 from ipywidgets import HTML, FileUpload, widgets
 # for plotting time series
 from matplotlib import pyplot as plt
-
-# import itslive datacube tools for working with cloun-based datacubes
-from datacube_tools import DATACUBETOOLS as dctools
 
 
 class ITSLIVE:

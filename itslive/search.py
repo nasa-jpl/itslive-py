@@ -3,13 +3,14 @@ import functools
 import json
 import logging
 import math
-import numpy as np
 import os
-import pyproj
 import random
 import time
-from shapely.geometry import shape, box
+
+import numpy as np
+import pyproj
 import s3fs
+from shapely.geometry import box, shape
 
 
 def timing_decorator(func):

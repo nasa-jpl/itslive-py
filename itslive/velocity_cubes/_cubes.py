@@ -7,14 +7,14 @@ from uuid import uuid4
 
 import numpy as np
 import pyproj
-
 # for datacube xarray/zarr access
 import xarray as xr
-from itslive.dataviz import plot_terminal
-from itslive.search import serverless_search
 from rich import print as rprint
 from rich.progress import track
 from shapely import geometry
+
+from itslive.dataviz import plot_terminal
+from itslive.search import serverless_search
 
 
 # class to throw time series lookup errors
@@ -147,7 +147,7 @@ def find_by_bbox(
     :param upper_right_lat: upper right latitude
     :returns: list of URLs for the matching Zarr cubes.
     """
-    from shapely.geometry import mapping, box
+    from shapely.geometry import box, mapping
 
     box_geom = mapping(
         box(lower_left_lon, lower_left_lat, upper_right_lon, upper_right_lat)
@@ -250,7 +250,7 @@ def find_by_polygon(points: List[tuple[float, float]] = []) -> List[Dict[str, An
     :param points: list of polygon points i.e. [(20.1,80.0),(21.1,81.1), ...]
     :returns: list of URLs for the matching Zarr cubes
     """
-    from shapely.geometry import mapping, Polygon
+    from shapely.geometry import Polygon, mapping
 
     polygon_geom = mapping(Polygon(points))
 

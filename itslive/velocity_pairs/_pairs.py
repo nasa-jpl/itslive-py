@@ -9,7 +9,7 @@ import earthaccess
 import requests
 from pqdm.threads import pqdm
 
-from itslive.search import serverless_search, GTE, LTE, EQ
+from itslive.search import EQ, GTE, LTE, serverless_search
 
 
 def find(
@@ -132,7 +132,7 @@ def find_streaming(
     Yields:
         URLs for matching velocity pair NetCDF files, one at a time
     """
-    from shapely.geometry import box, mapping, Polygon
+    from shapely.geometry import Polygon, box, mapping
 
     if polygon is None and bbox is None:
         print("Search needs either bbox or polygon geometries", file=sys.stderr)

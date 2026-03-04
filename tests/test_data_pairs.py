@@ -1,6 +1,7 @@
 import logging
 
 import pytest
+
 from itslive import velocity_pairs as pairs
 
 logger = logging.getLogger(__name__)

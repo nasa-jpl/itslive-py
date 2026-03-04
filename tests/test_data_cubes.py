@@ -1,8 +1,9 @@
 import logging
 
-import itslive
 import pytest
 import xarray as xr
+
+import itslive
 from itslive import velocity_cubes as cubes
 
 logger = logging.getLogger(__name__)

@@ -1,18 +1,15 @@
 # to get and use geojson datacube catalog
 import json
 import logging
-
 # for timing data access
 import time
 
 import numpy as np
 import pyproj
 import s3fs as s3
-
 # for datacube xarray/zarr access
 import xarray as xr
 from pyproj import Transformer
-
 # for plotting time series
 from shapely import geometry
 

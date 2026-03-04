@@ -1,11 +1,12 @@
+import csv
 import datetime
+import json
+import sys
+
 import rich_click as click
 from rich import print as rprint
-import sys
-import json
-import csv
 
-from itslive.search import EQ, GTE, LTE, GT, LT, NEQ
+from itslive.search import EQ, GT, GTE, LT, LTE, NEQ
 
 # Use Rich markup
 click.rich_click.USE_RICH_MARKUP = True
