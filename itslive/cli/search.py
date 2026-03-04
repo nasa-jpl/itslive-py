@@ -55,7 +55,7 @@ def validate_bbox(ctx, param, value):
             return parts
         except ValueError:
             raise click.BadParameter(
-                "bbox must be 'min_lon,min_lat,max_lon,max_lat' " "e.g., -50,65,-40,75"
+                "bbox must be 'min_lon,min_lat,max_lon,max_lat' e.g., -50,65,-40,75"
             )
     return value
 
@@ -292,6 +292,7 @@ def validate_filter(ctx, param, value):
 @click.option(
     "--quiet",
     is_flag=True,
+    default=True,
     help="Suppress progress messages to stderr",
 )
 def search(
@@ -411,7 +412,6 @@ def search(
             print(json.dumps(urls_list, indent=2))
 
     elif format == "csv":
-
         writer = None
         for i, url in enumerate(url_generator):
             if count_only:
