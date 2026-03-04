@@ -143,9 +143,7 @@ def plot_time_series(points, variable, label_by, outdir, stdout):
     is_flag=True,
     help="Verbose output",
 )
-def export(
-    input_coordinates, lat, lon, variables, outdir, format, debug
-):
+def export(input_coordinates, lat, lon, variables, outdir, format, debug):
     """
     ITS_LIVE Global Glacier Veolocity
 
