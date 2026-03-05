@@ -271,9 +271,7 @@ def find_streaming(
     }
 
     catalog_desc = "STAC API" if engine == "stac" else f"geoparquet ({engine} engine)"
-    print(
-        f"Finding matching velocity pairs using {catalog_desc}... ", file=sys.stderr
-    )
+    print(f"Finding matching velocity pairs using {catalog_desc}... ", file=sys.stderr)
     try:
         if engine == "stac":
             # Stream directly from STAC API page-by-page to avoid loading all
@@ -282,9 +280,7 @@ def find_streaming(
 
             from itslive.search import build_cql2_filter, build_cql2_filters_from_dict
 
-            stac_client = pystac_client.Client.open(
-                stac_params["base_catalog_href"]
-            )
+            stac_client = pystac_client.Client.open(stac_params["base_catalog_href"])
             stac_search_kwargs = {
                 "intersects": roi,
                 "datetime": f"{start_date}/{end_date}",
