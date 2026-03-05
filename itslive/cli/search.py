@@ -90,16 +90,20 @@ def validate_filter(ctx, param, value):
     """
     Parse filter string(s) in format 'property:operator:value'.
 
+    The operator is used as the delimiter, so property names that contain
+    colons (e.g. 'proj:code') are handled correctly.
+
     When used with multiple=True, this receives a tuple of filter strings.
 
     Examples:
-        - platform:=:S2          # platform equals S2
-        - percent_valid_pixels:>:50  # percent_valid_pixels greater than 50
-        - created:>=:2020-01-01 # created on or after date
-        - version:!=:002         # version not equal to 002
+        - platform:=:S2               # platform equals S2
+        - percent_valid_pixels:>=:50  # percent_valid_pixels greater or equal 50
+        - created:>=:2020-01-01       # created on or after date
+        - version:!=:002              # version not equal to 002
+        - proj:code:=:EPSG:32717      # namespaced property with colon in value
 
     Operators: = (equals), >= (greater or equal), <= (less or equal),
-                > (greater), < (less), != (not equal)
+               > (greater), < (less), != (not equal)
 
     Returns:
         List of tuples: [(property_name, PropertyFilter), ...]
@@ -107,15 +111,23 @@ def validate_filter(ctx, param, value):
     if not value:
         return None
 
+    import re
+
+    # Match the first occurrence of a known operator token surrounded (or
+    # preceded) by colons: :>=:  :<=:  :!=:  :=:  :>:  :<:
+    _OP_RE = re.compile(r":(>=|<=|!=|=|>|<):")
+
     result = []
 
     for filter_str in value:
         try:
-            parts = filter_str.split(":", 2)
-            if len(parts) != 3:
+            m = _OP_RE.search(filter_str)
+            if not m:
                 raise ValueError(f"Invalid filter format in '{filter_str}'")
 
-            prop_name, op, value_str = parts
+            prop_name = filter_str[: m.start()]
+            op = m.group(1)
+            value_str = filter_str[m.end() :]
 
             # Map operator strings to filter helpers
             op_map = {

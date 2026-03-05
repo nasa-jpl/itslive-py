@@ -246,7 +246,8 @@ You can filter granules by any STAC property using the `--filter` option (CLI) o
 itslive-search --bbox -50,65,-40,75 \
   --filter platform:=:S2 \
   --filter version:=:002 \
-  --filter percent_valid_pixels:>=:85
+  --filter percent_valid_pixels:>=:85 \
+  --filter proj:code:=:EPSG:3413
 ```
 
 ```python
