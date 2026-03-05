@@ -96,12 +96,6 @@ def list_variables():
 
 @click.command()
 @click.option(
-    "--itslive-catalog",
-    required=False,
-    default="https://its-live-data.s3.amazonaws.com/datacubes/catalog_v02.json",
-    help="GeoJSON catalog with the ITS_LIVE cube metadata",
-)
-@click.option(
     "--input-coordinates",
     required=False,
     cls=Mutex,
@@ -163,7 +157,7 @@ def list_variables():
     is_flag=True,
     help="Verbose output",
 )
-def plot(itslive_catalog, input_coordinates, lat, lon, variable, agg, outdir, stdout):
+def plot(input_coordinates, lat, lon, variable, agg, outdir, stdout):
     """
     ITS_LIVE Global Glacier Veolocity
 

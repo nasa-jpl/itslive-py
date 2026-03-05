@@ -13,8 +13,9 @@ from itslive.search import EQ, GTE, LTE, serverless_search
 
 
 def find(
-    bbox: Union[List[float], None],
+    bbox: Union[List[float], None] = None,
     polygon: Union[List[float], None] = None,
+    geojson: Union[dict, None] = None,
     percent_valid_pixels: int = 1,
     mission: Union[None, str] = None,
     start: Union[None, datetime.date] = None,
@@ -29,7 +30,8 @@ def find(
 
     Args:
         bbox: List of [min_lon, min_lat, max_lon, max_lat]
-        polygon: List of coordinates defining a polygon
+        polygon: List of (lon, lat) tuples defining a polygon
+        geojson: A GeoJSON geometry dict (e.g. {"type": "Polygon", "coordinates": [...]})
         percent_valid_pixels: Minimum percent of valid pixels
         mission: Satellite mission filter (e.g., "landsatOLI", "sentinel1", "sentinel2")
         start: Start date
@@ -76,6 +78,7 @@ def find(
         find_streaming(
             bbox=bbox,
             polygon=polygon,
+            geojson=geojson,
             percent_valid_pixels=percent_valid_pixels,
             mission=mission,
             start=start,
@@ -90,8 +93,9 @@ def find(
 
 
 def find_streaming(
-    bbox: Union[List[float], None],
+    bbox: Union[List[float], None] = None,
     polygon: Union[List[float], None] = None,
+    geojson: Union[dict, None] = None,
     percent_valid_pixels: int = 1,
     mission: Union[None, str] = None,
     start: Union[None, datetime.date] = None,
@@ -109,7 +113,8 @@ def find_streaming(
 
     Args:
         bbox: List of [min_lon, min_lat, max_lon, max_lat]
-        polygon: List of coordinates defining a polygon
+        polygon: List of (lon, lat) tuples defining a polygon
+        geojson: A GeoJSON geometry dict (e.g. {"type": "Polygon", "coordinates": [...]})
         percent_valid_pixels: Minimum percent of valid pixels
         mission: Satellite mission filter (e.g., "landsatOLI", "sentinel1", "sentinel2")
         start: Start date
@@ -127,19 +132,35 @@ def find_streaming(
                  Use helpers: EQ(), GTE(), LTE(), GT(), LT(), NEQ().
                  Examples: {"platform": EQ("S2"), "version": EQ("002")}
                  If provided, these override the parameter-based filters.
-        stac_kwargs: Additional arguments to pass to serverless_search()
 
     Yields:
         URLs for matching velocity pair NetCDF files, one at a time
     """
-    from shapely.geometry import Polygon, box, mapping
+    from shapely.geometry import Polygon, box, mapping, shape
 
-    if polygon is None and bbox is None:
-        print("Search needs either bbox or polygon geometries", file=sys.stderr)
+    if geojson is None and polygon is None and bbox is None:
+        print("Search needs a bbox, polygon, or geojson geometry", file=sys.stderr)
         return
 
-    # Build geometry
-    if polygon is not None:
+    # Build geometry — geojson takes priority, then polygon, then bbox
+    if geojson is not None:
+        # Accept a full GeoJSON Feature or a bare geometry dict
+        if geojson.get("type") == "Feature":
+            roi = geojson["geometry"]
+        else:
+            roi = geojson
+        # Validate it is a recognised geometry type
+        try:
+            shape(roi)  # raises if invalid
+        except Exception as e:
+            print(f"Invalid GeoJSON geometry: {e}", file=sys.stderr)
+            return
+    elif polygon is not None:
+        # Accept either a flat [lon, lat, lon, lat, ...] list (as produced
+        # by the CLI) or a list of (lon, lat) tuples / pairs.
+        if polygon and not isinstance(polygon[0], (list, tuple)):
+            it = iter(polygon)
+            polygon = list(zip(it, it))
         roi = mapping(Polygon(polygon))
     else:
         roi = mapping(box(bbox[0], bbox[1], bbox[2], bbox[3]))
@@ -186,7 +207,7 @@ def find_streaming(
     # Build base catalog href explicitly based on engine and partitioning
     if "base_catalog_href" not in stac_kwargs:
         if engine == "stac":
-            default_catalog = "https://stac.its-live.org"
+            default_catalog = "https://stac.itslive.cloud"
         elif engine in ["duckdb", "rustac"]:
             # Build geoparquet path explicitly based on partition type and resolution
             # Note: Only H3 resolutions r1 and r2 are available
@@ -250,14 +271,50 @@ def find_streaming(
     }
 
     catalog_desc = "STAC API" if engine == "stac" else f"geoparquet ({engine} engine)"
+    print(
+        f"Finding matching velocity pairs using {catalog_desc}... ", file=sys.stderr
+    )
     try:
-        print(
-            f"Finding matching velocity pairs using {catalog_desc}... ", file=sys.stderr
-        )
-        urls = serverless_search(**stac_params)
-        print(f"Found {len(urls)} pairs", file=sys.stderr)
-        for url in urls:
-            yield url
+        if engine == "stac":
+            # Stream directly from STAC API page-by-page to avoid loading all
+            # items into memory before yielding.
+            import pystac_client
+
+            from itslive.search import build_cql2_filter, build_cql2_filters_from_dict
+
+            stac_client = pystac_client.Client.open(
+                stac_params["base_catalog_href"]
+            )
+            stac_search_kwargs = {
+                "intersects": roi,
+                "datetime": f"{start_date}/{end_date}",
+                "collections": [stac_params["collection"]],
+            }
+            cql2_filter_list = (
+                build_cql2_filters_from_dict(final_filters) if final_filters else []
+            )
+            cql2_filter = (
+                build_cql2_filter(cql2_filter_list) if cql2_filter_list else None
+            )
+            if cql2_filter is not None:
+                stac_search_kwargs["filter"] = cql2_filter
+                stac_search_kwargs["filter_lang"] = "cql2-json"
+
+            item_search = stac_client.search(**stac_search_kwargs)
+            asset_type = stac_params.get("asset_type", ".nc")
+            count = 0
+            for item in item_search.items():
+                for asset in item.assets.values():
+                    roles = asset.roles or []
+                    if "data" in roles and asset.href.endswith(asset_type):
+                        count += 1
+                        yield asset.href
+            print(f"Found {count} pairs", file=sys.stderr)
+        else:
+            urls = serverless_search(**stac_params)
+            print(f"Found {len(urls)} pairs", file=sys.stderr)
+            for url in urls:
+                yield url
     except Exception as e:
         logging.error(f"Error searching {catalog_desc}: {e}")
         return
