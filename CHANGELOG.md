@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+
+* [v0.5.1] 2026-03-05
+* features
+    * updated catalog to Feb 2026
+    * added support for geoparquet-based queries (bulk queries)
+    * improved performance of data retrieval and processing
+    * enhanced visualization capabilities with new plotting options
+
 * [v0.3.2] 2024-01-22
 * features
     * fixed catalog URL 

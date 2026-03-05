@@ -370,6 +370,7 @@ def get_time_series(
             if cube_url in _open_cubes:
                 xr_da = _open_cubes[cube_url]
             else:
+                # this way xarray figures out the s3:// or https://
                 xr_da = xr.open_dataset(cube_url, engine="zarr", decode_timedelta=True)
                 _open_cubes[cube_url] = xr_da
             time_series = xr_da[variables].sel(
@@ -406,6 +407,7 @@ def get_time_series(
     return velocity_ts
 
 
+# Mark F.
 def get_annual_time_series(
     points: List[tuple[float, float]], variables: List[str] = ["v"]
 ) -> List[Dict[str, Any]]:
