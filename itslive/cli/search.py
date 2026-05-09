@@ -6,37 +6,11 @@ import sys
 import rich_click as click
 from rich import print as rprint
 
+from itslive.cli._shared import Mutex
 from itslive.search import EQ, GT, GTE, LT, LTE, NEQ
 
 # Use Rich markup
 click.rich_click.USE_RICH_MARKUP = True
-
-
-class Mutex(click.Option):
-    # Taken from https://bit.ly/3hWeXVj
-    def __init__(self, *args, **kwargs):
-        self.not_required_if: list = kwargs.pop("not_required_if")
-
-        assert self.not_required_if, "'not_required_if' parameter required"
-        kwargs["help"] = (
-            f"{kwargs.get('help', '')} Option is mutually exclusive with "
-            f"{', '.join(self.not_required_if).strip()}."
-        )
-        super(Mutex, self).__init__(*args, **kwargs)
-
-    def handle_parse_result(self, ctx, opts, args):
-        current_opt: bool = self.name in opts
-        for mutex_opt in self.not_required_if:
-            if mutex_opt in opts:
-                if current_opt:
-                    error_msg = (
-                        f"Illegal usage: {self.name}"
-                        f" is mutually exclusive with {str(mutex_opt)}"
-                    )
-                    raise click.UsageError(error_msg)
-                else:
-                    self.prompt = None
-        return super(Mutex, self).handle_parse_result(ctx, opts, args)
 
 
 def validate_bbox(ctx, param, value):

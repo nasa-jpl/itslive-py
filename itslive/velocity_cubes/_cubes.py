@@ -9,13 +9,16 @@ import numpy as np
 import pyproj
 
 # for datacube xarray/zarr access
+import functools
+
 import xarray as xr
 from rich import print as rprint
 from rich.progress import track
 from shapely import geometry
 
+import pystac_client
+
 from itslive.dataviz import plot_terminal
-from itslive.search import serverless_search
 
 
 # class to throw time series lookup errors
@@ -35,9 +38,9 @@ COMPOSITE_VERSION = "v2-updated-september2025"
 _ITS_LIVE_BASE_URL = "https://its-live-data.s3.amazonaws.com/"
 
 
-# keep track of open cubes so that we don't re-open (it is slow to re-read xarray metadata
-# and dimension vectors)
-_open_cubes = {}
+@functools.lru_cache(maxsize=32)
+def _open_cached_dataset(url: str) -> xr.Dataset:
+    return xr.open_dataset(url, engine="zarr", decode_timedelta=True)
 
 
 def _get_projected_xy_point(lon: float, lat: float, projection: str) -> geometry.Point:
@@ -192,154 +195,87 @@ def find(
     return cubes
 
 
+def _search_cubes(
+    roi_geom: dict,
+    geometry_ref: dict,
+) -> List[Dict[str, Any]]:
+    """Search for Zarr cubes intersecting the given geometry via the STAC API.
+
+    Args:
+        roi_geom: JSON-Serializable geometry dict for the STAC query.
+        geometry_ref: Geometry dict stored in the result (usually same as roi_geom).
+
+    Returns:
+        List of cube feature dicts with properties including zarr_url, epsg, etc.
+    """
+    try:
+        client = pystac_client.Client.open(STAC_CATALOG_URL)
+
+        search = client.search(
+            intersects=roi_geom,
+            datetime="2000-01-01/2025-12-31",
+            collections=[STAC_COLLECTION],
+        )
+
+        cubes = []
+        for item in search.items():
+            zarr_url = None
+            for asset in item.assets.values():
+                if "data" in (asset.roles or []) and asset.href.endswith(".zarr"):
+                    zarr_url = asset.href
+                    break
+
+            if not zarr_url:
+                continue
+
+            proj_code = item.properties.get("proj:code", "EPSG:3413")
+            epsg = proj_code.replace("EPSG:", "") if proj_code else "3413"
+
+            cubes.append(
+                {
+                    "type": "Feature",
+                    "geometry": geometry_ref,
+                    "properties": {
+                        "zarr_url": zarr_url,
+                        "composite_zarr_url": _datacube_to_composite_url(zarr_url),
+                        "epsg": epsg,
+                        "geometry_epsg": geometry_ref,
+                    },
+                }
+            )
+
+        return cubes
+    except Exception as e:
+        logging.error(f"Error searching STAC catalog: {e}")
+        return []
+
+
 def find_by_bbox(
     lower_left_lon: float,
     lower_left_lat: float,
     upper_right_lon: float,
     upper_right_lat: float,
 ) -> List[Dict[str, Any]]:
-    """
-    Finds the zarr cubes that intersect with a given bounding box
-    and returns a list of URLs.
-
-    :param lower_left_lon: lower left longitude
-    :param lower_left_lat: lower left latitude
-    :param upper_right_lon: upper right longitude
-    :param upper_right_lat: upper right latitude
-    :returns: list of URLs for the matching Zarr cubes.
-    """
     from shapely.geometry import box, mapping
 
-    box_geom = mapping(
+    roi = mapping(
         box(lower_left_lon, lower_left_lat, upper_right_lon, upper_right_lat)
     )
-
-    stac_params = {
-        "start_date": "2000-01-01",
-        "end_date": "2025-12-31",
-        "roi": box_geom,
-        "collection": STAC_COLLECTION,
-        "engine": "stac",
-        "base_catalog_href": STAC_CATALOG_URL,
-        "asset_type": ".zarr",
-        "filters": {},
-    }
-
-    try:
-        zarr_urls = serverless_search(**stac_params)
-
-        cubes = []
-        for url in zarr_urls:
-            cubes.append(
-                {
-                    "type": "Feature",
-                    "geometry": box_geom,
-                    "properties": {
-                        "zarr_url": url,
-                        "composite_zarr_url": _datacube_to_composite_url(url),
-                        "epsg": "3413",
-                        "geometry_epsg": box_geom,
-                    },
-                }
-            )
-
-        return cubes
-    except Exception as e:
-        logging.error(f"Error searching STAC catalog: {e}")
-        return []
+    return _search_cubes(roi, roi)
 
 
 def find_by_point(lon: float, lat: float) -> List[Dict[str, Any]]:
-    """
-    Finds the zarr cubes that contain a given lon, lat pair.
-
-    :param lon: longitude
-    :param lat: latitude
-    :returns: geojson dictionary with matching cube
-    """
     from shapely.geometry import mapping
 
-    point_geom = mapping(geometry.Point(lon, lat))
-
-    stac_params = {
-        "start_date": "2000-01-01",
-        "end_date": "2025-12-31",
-        "roi": point_geom,
-        "collection": STAC_COLLECTION,
-        "engine": "stac",
-        "base_catalog_href": STAC_CATALOG_URL,
-        "asset_type": ".zarr",
-        "filters": {},
-    }
-
-    try:
-        zarr_urls = serverless_search(**stac_params)
-
-        cubes = []
-        for url in zarr_urls:
-            cubes.append(
-                {
-                    "type": "Feature",
-                    "geometry": point_geom,
-                    "properties": {
-                        "zarr_url": url,
-                        "composite_zarr_url": _datacube_to_composite_url(url),
-                        "epsg": "3413",
-                        "geometry_epsg": point_geom,
-                    },
-                }
-            )
-
-        return cubes
-    except Exception as e:
-        logging.error(f"Error searching STAC catalog: {e}")
-        return []
+    roi = mapping(geometry.Point(lon, lat))
+    return _search_cubes(roi, roi)
 
 
 def find_by_polygon(points: List[tuple[float, float]] = []) -> List[Dict[str, Any]]:
-    """
-    Finds the zarr cubes that contain a given polygon.
-
-    :param points: list of polygon points i.e. [(20.1,80.0),(21.1,81.1), ...]
-    :returns: list of URLs for the matching Zarr cubes
-    """
     from shapely.geometry import Polygon, mapping
 
-    polygon_geom = mapping(Polygon(points))
-
-    stac_params = {
-        "start_date": "2000-01-01",
-        "end_date": "2025-12-31",
-        "roi": polygon_geom,
-        "collection": STAC_COLLECTION,
-        "engine": "stac",
-        "base_catalog_href": STAC_CATALOG_URL,
-        "asset_type": ".zarr",
-        "filters": {},
-    }
-
-    try:
-        zarr_urls = serverless_search(**stac_params)
-
-        cubes = []
-        for url in zarr_urls:
-            cubes.append(
-                {
-                    "type": "Feature",
-                    "geometry": polygon_geom,
-                    "properties": {
-                        "zarr_url": url,
-                        "composite_zarr_url": _datacube_to_composite_url(url),
-                        "epsg": "3413",
-                        "geometry_epsg": polygon_geom,
-                    },
-                }
-            )
-
-        return cubes
-    except Exception as e:
-        logging.error(f"Error searching STAC catalog: {e}")
-        return []
+    roi = mapping(Polygon(points))
+    return _search_cubes(roi, roi)
 
 
 def get_time_series(
@@ -366,13 +302,7 @@ def get_time_series(
             zarr_url = cube["properties"]["zarr_url"]
             cube_url = zarr_url.replace("http://", "https://")
             projected_point = _get_projected_xy_point(lon, lat, projection)
-            # if we have already opened this cube, don't open it again
-            if cube_url in _open_cubes:
-                xr_da = _open_cubes[cube_url]
-            else:
-                # this way xarray figures out the s3:// or https://
-                xr_da = xr.open_dataset(cube_url, engine="zarr", decode_timedelta=True)
-                _open_cubes[cube_url] = xr_da
+            xr_da = _open_cached_dataset(cube_url)
             time_series = xr_da[variables].sel(
                 x=projected_point.x, y=projected_point.y, method="nearest"
             )
@@ -447,14 +377,7 @@ def get_annual_time_series(
             composite_url_https = composite_url.replace("http://", "https://")
             projected_point = _get_projected_xy_point(lon, lat, projection)
 
-            # Use cached dataset or open new one
-            if composite_url_https in _open_cubes:
-                xr_da = _open_cubes[composite_url_https]
-            else:
-                xr_da = xr.open_dataset(
-                    composite_url_https, engine="zarr", decode_timedelta=True
-                )
-                _open_cubes[composite_url_https] = xr_da
+            xr_da = _open_cached_dataset(composite_url_https)
 
             time_series = xr_da[variables].sel(
                 x=projected_point.x, y=projected_point.y, method="nearest"

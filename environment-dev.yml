@@ -1,8 +1,8 @@
-name: itslive_vortex_dev
+name: itslive-py
 channels:
   - conda-forge
 dependencies:
-  - python=3.9.*
+  - python=3.12.*
   - jupyterlab
   - mamba
   - cartopy
@@ -23,7 +23,5 @@ dependencies:
   - zarr
   - pip
   - pip:
-    - git+https://github.com/nasa-jpl/itslive-py.git
-    - utm
-    - pynvim
-    - "poetry>=1.2"
+      - utm
+      - pynvim

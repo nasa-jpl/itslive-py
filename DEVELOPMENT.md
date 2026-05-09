@@ -19,7 +19,6 @@ understanding how CI and documentation builds work.
 ## Prerequisites
 
 - Python 3.10 or newer
-- [Poetry](https://python-poetry.org/docs/#installation) _(recommended)_ or pip
 - [pipx](https://pipx.pypa.io/) for installing CLI tools globally
 
 ```bash
@@ -31,35 +30,32 @@ pipx install bump-my-version
 
 ## Local Setup
 
-### With Poetry (recommended)
-
-```bash
-git clone https://github.com/nasa-jpl/itslive-py.git
-cd itslive-py
-pip install poetry
-poetry install
-```
-
-All development tools (`bump-my-version`, `black`, `isort`, `pytest`, etc.) and
-docs dependencies are installed automatically.
-
-### With pip
+### With pip (recommended)
 
 ```bash
 git clone https://github.com/nasa-jpl/itslive-py.git
 cd itslive-py
 
-# Core package + dev tools (linting, testing, versioning)
+# Core package + dev tools (linting, testing)
 pip install -e ".[dev]"
 
 # Also install docs dependencies
 pip install -e ".[dev,docs]"
 ```
 
-The `dev` extra includes: `bump-my-version`, `black`, `isort`, `pylint`,
-`pytest`, `responses`, and type stubs.  
+The `dev` extra includes: `ruff`, `black`, `isort`, `pre-commit`, `pytest`,
+`pytest-cov`, `responses`, and type stubs.
 The `docs` extra adds: `mkdocs`, `mkdocs-material`, `mkdocstrings`, and notebook
 dependencies.
+
+### With pre-commit (optional but recommended)
+
+```bash
+pip install -e ".[dev]"
+pre-commit install
+```
+
+This will run `ruff`, `black`, and `isort` automatically on every commit.
 
 ---
 
@@ -75,23 +71,29 @@ Tests are split into two groups using pytest markers:
 ### Unit tests only (used in CI)
 
 ```bash
-poetry run pytest -m "not integration"
+pytest -m "not integration"
 ```
 
 ### All tests, including integration
 
 ```bash
-poetry run pytest
+pytest
 ```
 
 ### Run a specific test file or marker
 
 ```bash
 # single file
-poetry run pytest tests/test_data_cubes.py
+pytest tests/test_data_cubes.py
 
 # only integration tests
-poetry run pytest -m integration
+pytest -m integration
+```
+
+### With coverage
+
+```bash
+pytest -m "not integration" --cov=itslive --cov-report=term-missing
 ```
 
 Pytest configuration lives in `pyproject.toml` under `[tool.pytest.ini_options]`.
@@ -124,26 +126,34 @@ def test_catalog_parse(mock_responses):
 
 ## Code Style
 
-The project uses **black** for formatting and **isort** for import ordering.
+The project uses **ruff** (linting), **black** (formatting), and **isort** (import
+ordering).
 
 ```bash
 # Check only (same as CI)
-poetry run black itslive tests --check
-poetry run isort --multi-line=3 --trailing-comma --force-grid-wrap=0 \
-    --combine-as --line-width 88 --check-only --thirdparty itslive \
-    itslive tests
+ruff check itslive tests
+black itslive tests --check
+isort --profile black --check-only itslive tests
 
 # Auto-fix
-poetry run black itslive tests
-poetry run isort --multi-line=3 --trailing-comma --force-grid-wrap=0 \
-    --combine-as --line-width 88 --thirdparty itslive \
-    itslive tests
+ruff check --fix itslive tests
+black itslive tests
+isort --profile black itslive tests
 ```
 
 Or run the existing helper script:
 
 ```bash
 bash scripts/lint.sh
+```
+
+### pre-commit
+
+If you have pre-commit installed, it will run these checks automatically before
+each commit. To run on all files manually:
+
+```bash
+pre-commit run --all-files
 ```
 
 ---
@@ -161,13 +171,13 @@ by the package at runtime is read from the installed package metadata via
 ### Bump commands
 
 ```bash
-# Patch release: 0.3.2 → 0.3.3
+# Patch release: 0.5.1 → 0.5.2
 bump-my-version bump patch
 
-# Minor release: 0.3.2 → 0.4.0
+# Minor release: 0.5.1 → 0.6.0
 bump-my-version bump minor
 
-# Major release: 0.3.2 → 1.0.0
+# Major release: 0.5.1 → 1.0.0
 bump-my-version bump major
 ```
 
@@ -201,8 +211,8 @@ Triggers on pushes and PRs targeting `main` or `develop`.
 
 | Job | Python versions | What it does |
 |---|---|---|
-| `lint` | 3.12 | black + isort checks |
-| `test` | 3.10, 3.11, 3.12 | `pytest -m "not integration"` |
+| `lint` | 3.12 | ruff + black checks |
+| `test` | 3.10, 3.11, 3.12 | `pytest -m "not integration"` with coverage |
 
 Concurrent runs on the same branch/PR are cancelled automatically to save
 runner minutes.
@@ -211,7 +221,7 @@ runner minutes.
 
 Triggers when a `v*.*.*` tag is pushed (i.e. after `bump-my-version` + `git push --tags`).
 
-1. Builds the distribution with `poetry build`.
+1. Builds the distribution with `python -m build`.
 2. Publishes to PyPI using [PyPA's official action](https://github.com/pypa/gh-action-pypi-publish)
    with **OIDC trusted publishing** — no `PYPI_TOKEN` secret is required as long
    as the `itslive` project on PyPI is configured with a trusted publisher for
@@ -228,13 +238,13 @@ ReadTheDocs build configuration is in `.readthedocs.yaml` at the root of the
 repository. It:
 
 - Uses Python 3.12 on Ubuntu 22.04.
-- Installs dependencies via `poetry install`.
+- Installs dependencies via `pip install ".[docs]"`.
 - Builds with MkDocs (not Sphinx).
 
 ### Build docs locally
 
 ```bash
-poetry run mkdocs serve
+mkdocs serve
 ```
 
 Then open `http://127.0.0.1:8000` in your browser. Changes to files listed
@@ -243,7 +253,7 @@ under `watch:` in `mkdocs.yml` trigger a live reload.
 ### Build a static site
 
 ```bash
-poetry run mkdocs build
+mkdocs build
 ```
 
 Output goes to `site/` (git-ignored).

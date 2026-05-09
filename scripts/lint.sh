@@ -3,5 +3,6 @@
 set -e
 set -x
 
+ruff check itslive tests
 black itslive tests --check
-isort --multi-line=3 --trailing-comma --force-grid-wrap=0 --combine-as --line-width 88 --check-only --thirdparty itslive tests
+isort --profile black --check-only itslive tests

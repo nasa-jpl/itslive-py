@@ -6,12 +6,6 @@ import pandas as pd
 import plotext
 import xarray as xr
 
-# Import numpy explicitly if not already imported
-try:
-    import numpy as np
-except ImportError:
-    import numpy as np
-
 # import itslive
 
 

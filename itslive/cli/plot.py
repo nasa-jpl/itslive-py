@@ -1,71 +1,11 @@
-import pandas as pd
 import rich_click as click
 from rich import print as rprint
 
 import itslive
+from itslive.cli._shared import Mutex, validate_csv, validate_latitude, validate_longitude
 
 # Use Rich markup
 click.rich_click.USE_RICH_MARKUP = True
-
-
-class Mutex(click.Option):
-    # Taken from https://bit.ly/3hWeXVj wonder if this is already in the library
-    def __init__(self, *args, **kwargs):
-        self.not_required_if: list = kwargs.pop("not_required_if")
-
-        assert self.not_required_if, "'not_required_if' parameter required"
-        kwargs["help"] = (
-            f"{kwargs.get('help', '')} Option is mutually exclusive with "
-            f"{', '.join(self.not_required_if).strip()}."
-        )
-        super(Mutex, self).__init__(*args, **kwargs)
-
-    def handle_parse_result(self, ctx, opts, args):
-        current_opt: bool = self.name in opts
-        for mutex_opt in self.not_required_if:
-            if mutex_opt in opts:
-                if current_opt:
-                    error_msg = (
-                        f"Illegal usage: {self.name}"
-                        f" is mutually exclusive with {str(mutex_opt)}"
-                    )
-                    raise click.UsageError(error_msg)
-                else:
-                    self.prompt = None
-        return super(Mutex, self).handle_parse_result(ctx, opts, args)
-
-
-def validate_latitude(lctx, param, lat):
-    if lat:
-        if lat > 90.0 or lat < -90.0:
-            error_msg = (
-                f"Not a valid longitude value: {lat}, must be between -90 and 90"
-            )
-            raise click.BadParameter(error_msg)
-        return lat
-
-
-def validate_longitude(ctx, param, lon):
-    if lon:
-        if lon > 180.0 or lon < -180.0:
-            error_msg = (
-                f"Not a valid longitude value: {lon}, must be between -180 and 180"
-            )
-            raise click.BadParameter(error_msg)
-        return lon
-
-
-def validate_csv(ctx, param, value):
-    if value:
-        try:
-            df = pd.read_csv(value, usecols=[0, 1], names=["lon", "lat"])
-            assert df.lat.dtype == "float"
-            assert df.lon.dtype == "float"
-            assert df.lon.between(-180.0, 180.0).any()
-            assert df.lat.between(-90.0, 90.0).any()
-            return df
-        except Exception:
-            raise click.BadParameter("Not a valid CSV file, the format is lon,lat")
 
 
 def export_time_series(points, variables, format, outdir):

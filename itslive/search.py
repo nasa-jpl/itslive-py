@@ -597,11 +597,12 @@ def serverless_search(
     return sorted(list(set(hrefs)))
 
 
-def transform_coord(proj1, proj2, lon, lat):
+def transform_coord(proj1: str, proj2: str, lon: float, lat: float) -> tuple[float, float]:
     """Transform coordinates from proj1 to proj2 (EPSG num)."""
-    proj1 = pyproj.Proj("+init=EPSG:" + proj1)
-    proj2 = pyproj.Proj("+init=EPSG:" + proj2)
-    return pyproj.transform(proj1, proj2, lon, lat)
+    transformer = pyproj.Transformer.from_crs(
+        f"EPSG:{proj1}", f"EPSG:{proj2}", always_xy=True
+    )
+    return transformer.transform(lon, lat)
 
 
 #
