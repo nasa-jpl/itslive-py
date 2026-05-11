@@ -1,11 +1,9 @@
-import collections
-
 import pytest
 
 from itslive.search import (
     EQ,
-    GTE,
     GT,
+    GTE,
     LT,
     LTE,
     NEQ,
@@ -27,7 +25,7 @@ class TestPropertyFilter:
     def test_is_namedtuple(self):
         pf = PropertyFilter(">=", 85.0)
         assert isinstance(pf, tuple)
-        assert isinstance(pf, collections.namedtuple)
+        assert type(pf).__name__ == "PropertyFilter"
 
 
 class TestFilterHelpers:

@@ -1,6 +1,9 @@
 from itslive.velocity_cubes._cubes import (
+    STAC_CATALOG_URL,
+    STAC_COLLECTION,
     export_csv,
     export_netcdf,
+    export_parquet,
     export_stdout,
     find,
     find_by_bbox,
@@ -13,16 +16,18 @@ from itslive.velocity_cubes._cubes import (
 )
 
 __all__ = [
+    "STAC_CATALOG_URL",
+    "STAC_COLLECTION",
     "find",
     "find_by_point",
     "find_by_bbox",
     "find_by_polygon",
     "export_csv",
+    "export_netcdf",
+    "export_parquet",
+    "export_stdout",
     "get_time_series",
     "get_annual_time_series",
-    "export_netcdf",
-    "export_stdout",
     "list_variables",
     "plot_time_series_terminal",
-    "plot_time_series",
 ]

@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from itslive.search import bucket_cube_name_from_url, path_exists
+from itslive.search import path_exists
 
 
 class TestPathExists:

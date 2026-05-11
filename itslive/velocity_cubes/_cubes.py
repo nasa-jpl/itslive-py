@@ -1,33 +1,29 @@
 # to get and use geojson datacube catalog
 # for timing data access
+# for datacube xarray/zarr access
+import functools
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import uuid4
 
 import numpy as np
 import pyproj
-
-# for datacube xarray/zarr access
-import functools
-
+import pystac_client
 import xarray as xr
 from rich import print as rprint
 from rich.progress import track
 from shapely import geometry
 
-import pystac_client
-
 from itslive.dataviz import plot_terminal
 
 
-# class to throw time series lookup errors
 class timeseriesException(Exception):
-    pass
+    """Raised when a time series lookup fails."""
 
 
 # STAC catalog configuration
-STAC_CATALOG_URL = "https://stac.itslive.cloud/"
+STAC_CATALOG_URL = "https://stac.itslive.cloud"
 STAC_COLLECTION = "itslive-cubes"
 
 # Annual composite path configuration
@@ -35,7 +31,6 @@ STAC_COLLECTION = "itslive-cubes"
 # e.g. datacube:  .../datacubes/v2-updated-october2024/{REGION}/ITS_LIVE_vel_{EPSG}_G0120_{XY}.zarr
 #      composite: .../composites/annual/v2-updated-september2025/{REGION}/ITS_LIVE_velocity_{EPSG}_120m_{XY}.zarr
 COMPOSITE_VERSION = "v2-updated-september2025"
-_ITS_LIVE_BASE_URL = "https://its-live-data.s3.amazonaws.com/"
 
 
 @functools.lru_cache(maxsize=32)
@@ -114,7 +109,7 @@ def list_variables() -> None:
     rprint(table)
 
 
-def _merge_default_variables(variables: List[str]) -> set[str]:
+def _merge_default_variables(variables: list[str]) -> set[str]:
     _default_variables = [
         "v",
         "v_error",
@@ -131,7 +126,7 @@ def _merge_default_variables(variables: List[str]) -> set[str]:
     return query_variables
 
 
-def _merge_default_composite_variables(variables: List[str]) -> set[str]:
+def _merge_default_composite_variables(variables: list[str]) -> set[str]:
     """Default variables for annual composite datasets."""
     _default_variables = [
         # Time-varying (per year)
@@ -173,8 +168,8 @@ def _merge_default_composite_variables(variables: List[str]) -> set[str]:
 
 
 def find(
-    points: List[tuple[float, float]],
-) -> List[Dict[str, Any]]:
+    points: list[tuple[float, float]],
+) -> list[dict[str, Any]]:
     """Find the zarr cube information for a given geometry, if 2 values are passed
     it will use the point geometry, if 3 or more values are passed it will
     search using a polygon.
@@ -186,7 +181,7 @@ def find(
         Latitude value in 4326 format e.g. -70.2
     :type second: ``float``
     """
-    cubes: List = []
+    cubes: list = []
     if len(points) == 1:
         point = points[0]
         cubes = find_by_point(lon=point[0], lat=point[1])
@@ -198,7 +193,7 @@ def find(
 def _search_cubes(
     roi_geom: dict,
     geometry_ref: dict,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Search for Zarr cubes intersecting the given geometry via the STAC API.
 
     Args:
@@ -255,7 +250,7 @@ def find_by_bbox(
     lower_left_lat: float,
     upper_right_lon: float,
     upper_right_lat: float,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     from shapely.geometry import box, mapping
 
     roi = mapping(
@@ -264,14 +259,14 @@ def find_by_bbox(
     return _search_cubes(roi, roi)
 
 
-def find_by_point(lon: float, lat: float) -> List[Dict[str, Any]]:
+def find_by_point(lon: float, lat: float) -> list[dict[str, Any]]:
     from shapely.geometry import mapping
 
     roi = mapping(geometry.Point(lon, lat))
     return _search_cubes(roi, roi)
 
 
-def find_by_polygon(points: List[tuple[float, float]] = []) -> List[Dict[str, Any]]:
+def find_by_polygon(points: list[tuple[float, float]] = []) -> list[dict[str, Any]]:
     from shapely.geometry import Polygon, mapping
 
     roi = mapping(Polygon(points))
@@ -279,8 +274,8 @@ def find_by_polygon(points: List[tuple[float, float]] = []) -> List[Dict[str, An
 
 
 def get_time_series(
-    points: List[tuple[float, float]], variables: List[str] = ["v"]
-) -> List[Dict[str, Any]]:
+    points: list[tuple[float, float]], variables: list[str] = ["v"]
+) -> list[dict[str, Any]]:
     """
     For the points in the list, returns a list of dictionaries - each one containing:
         an xarray DataArray (time series) for each variable on the list for each of the lon lat points.
@@ -290,7 +285,7 @@ def get_time_series(
     :returns: list of dictionaries with coordinates and xarray time series Datasets for the nearest neighbors to the points
                 ITS_LIVE processes on a 120 m grid, so nearest points will be close to requested points
     """
-    velocity_ts: List = []
+    velocity_ts: list = []
     variables = _merge_default_variables(variables)
     for point in points:
         lon = point[0]
@@ -337,10 +332,9 @@ def get_time_series(
     return velocity_ts
 
 
-# Mark F.
 def get_annual_time_series(
-    points: List[tuple[float, float]], variables: List[str] = ["v"]
-) -> List[Dict[str, Any]]:
+    points: list[tuple[float, float]], variables: list[str] = ["v"]
+) -> list[dict[str, Any]]:
     """
     For the points in the list, returns annual composite velocity time series.
 
@@ -349,7 +343,7 @@ def get_annual_time_series(
     :returns: list of dictionaries with coordinates and xarray time series
               Datasets from annual composites
     """
-    velocity_ts: List = []
+    velocity_ts: list = []
     variables = _merge_default_composite_variables(variables)
 
     for point in points:
@@ -409,9 +403,9 @@ def get_annual_time_series(
 
 
 def export_csv(
-    points: List[tuple[float, float]],
-    variables: List[str] = ["v"],
-    outdir: Optional[str] = None,
+    points: list[tuple[float, float]],
+    variables: list[str] = ["v"],
+    outdir: str | None = None,
 ) -> None:
     """Exports a list of ITS_LIVE glacier velocity variables to csv files"""
 
@@ -474,10 +468,58 @@ def export_csv(
             rprint(f"[red on black]No data found at[/] lon: {lon}, lat: {lat}")
 
 
+def export_parquet(
+    points: list[tuple[float, float]],
+    variables: list[str] = ["v"],
+    outdir: str | None = None,
+) -> None:
+    """Exports a list of ITS_LIVE glacier velocity variables to parquet files."""
+
+    query_variables = _merge_default_variables(variables)
+
+    outdir = f"./itslive-{uuid4()}" if outdir is None else outdir
+    Path(outdir).mkdir(parents=True, exist_ok=True)
+
+    for point in track(
+        points,
+        description=f"Processing {len(points)} coordinates...",
+        total=len(points),
+    ):
+        lon = round(point[0], 4)
+        lat = round(point[1], 4)
+        result_series = get_time_series([(lon, lat)], query_variables)
+        if len(result_series):
+            series = result_series[0]["time_series"]
+
+            df = series.to_dataframe()
+            df["lon"] = lon
+            df["lat"] = lat
+            df = df.rename(
+                columns={
+                    "satellite_img1": "satellite",
+                    "mission_img1": "mission",
+                    "v": "v [m/yr]",
+                    "v_error": "v_error [m/yr]",
+                    "vx": "vx [m/yr]",
+                    "vx_error": "vx_error [m/yr]",
+                    "vy": "vy [m/yr]",
+                    "vy_error": "vy_error [m/yr]",
+                }
+            )
+            df["epsg"] = series.attrs["projection"]
+            if "date_dt" in df.columns:
+                df["date_dt [days]"] = df["date_dt"].dt.days
+            ts = df.dropna()
+            file_name = f"LON{lon}--LAT{lat}.parquet"
+            ts.to_parquet(f"{outdir}/{file_name}")
+        else:
+            rprint(f"[red on black]No data found at[/] lon: {lon}, lat: {lat}")
+
+
 def export_netcdf(
-    points: List[tuple[float, float]],
-    variables: List[str] = ["v"],
-    outdir: Optional[str] = None,
+    points: list[tuple[float, float]],
+    variables: list[str] = ["v"],
+    outdir: str | None = None,
 ) -> None:
     """Exports a list of ITS_LIVE glacier velocity variables to netcdf files"""
 
@@ -504,8 +546,8 @@ def export_netcdf(
 
 
 def export_stdout(
-    points: List[tuple[float, float]],
-    variables: List[str] = ["v"],
+    points: list[tuple[float, float]],
+    variables: list[str] = ["v"],
 ) -> None:
     """Exports a list of ITS_LIVE glacier velocity variables to stdout"""
 
@@ -548,20 +590,11 @@ def export_stdout(
             rprint(f"[red on black] No data found at [/] lon: {lon}, lat: {lat}")
 
 
-def plot_time_series(
-    points: List[tuple[float, float]],
-    variable: str = "v",
-    label_by: str = "location",
-    outdir: Optional[str] = None,
-) -> Any:
-    return None
-
-
 def plot_time_series_terminal(
-    points: List[tuple[float, float]],
-    variable: List[str] = ["v"],
+    points: list[tuple[float, float]],
+    variable: list[str] = ["v"],
     label_by: str = "location",
-    outdir: Optional[str] = None,
+    outdir: str | None = None,
 ):
     for point in track(
         points,

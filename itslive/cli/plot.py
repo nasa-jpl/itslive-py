@@ -2,31 +2,19 @@ import rich_click as click
 from rich import print as rprint
 
 import itslive
-from itslive.cli._shared import Mutex, validate_csv, validate_latitude, validate_longitude
+from itslive.cli._shared import (
+    Mutex,
+    validate_csv,
+    validate_latitude,
+    validate_longitude,
+)
 
 # Use Rich markup
 click.rich_click.USE_RICH_MARKUP = True
 
 
-def export_time_series(points, variables, format, outdir):
-    if format == "csv":
-        itslive.velocity_cubes.export_csv(points, variables, outdir)
-    elif format == "netcdf":
-        itslive.velocity_cubes.export_netcdf(points, variables, outdir)
-    else:
-        itslive.velocity_cubes.export_stdout(points, variables)
-    return None
-
-
 def plot_time_series(points, variable, operation, freq, outdir, stdout):
-    if outdir is not None:
-        pass
-        # TODO: save plot on outdir
-        # plot = itslive.velocity_cubes.plot_time_series(points, variable, label_by)
-        # plot.save()
-    else:
-        # Default: render in terminal
-        itslive.velocity_cubes.plot_time_series_terminal(points, variable)
+    itslive.velocity_cubes.plot_time_series_terminal(points, variable)
     return None
 
 

@@ -6,8 +6,6 @@ import pandas as pd
 import plotext
 import xarray as xr
 
-# import itslive
-
 
 def plot_terminal(
     lon: float,
@@ -182,8 +180,8 @@ def _plot_by_sensor(
 
     for satellite in sats:
         ax.plot(
-            dataset["mid_date"].where((dataset["satellite_img1"] == satellite)),
-            dataset[variable].where((dataset["satellite_img1"] == satellite)),
+            dataset["mid_date"].where(dataset["satellite_img1"] == satellite),
+            dataset[variable].where(dataset["satellite_img1"] == satellite),
             sat_plotsym_dict[satellite],
             markersize=3,
             label=sat_label_dict[satellite],

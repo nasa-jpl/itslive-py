@@ -1,4 +1,3 @@
-import pytest
 from shapely import geometry
 
 from itslive.velocity_cubes._cubes import (

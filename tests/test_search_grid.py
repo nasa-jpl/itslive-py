@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import pytest
+
 from itslive.search import get_overlapping_grid_names
 
 
@@ -34,7 +36,7 @@ class TestGetOverlappingGridNamesLatlon:
         missions_in_results = set()
         for path in result:
             parts = path.split("/")
-            mission = parts[-3]
+            mission = parts[-4]
             missions_in_results.add(mission)
         assert missions_in_results == {"landsatOLI", "sentinel1", "sentinel2"}
 
@@ -53,14 +55,16 @@ class TestGetOverlappingGridNamesLatlon:
 
 
 class TestGetOverlappingGridNamesH3:
+    def _small_polygon(self):
+        return {
+            "type": "Polygon",
+            "coordinates": [[[-50, 65], [-40, 65], [-40, 75], [-50, 75], [-50, 65]]],
+        }
+
     @patch("itslive.search.path_exists", return_value=True)
     def test_h3_partitioning_returns_prefixes(self, mock_path_exists):
-        geojson = {
-            "type": "Point",
-            "coordinates": [-45.0, 75.0],
-        }
         result = get_overlapping_grid_names(
-            geojson_geometry=geojson,
+            geojson_geometry=self._small_polygon(),
             base_href="s3://bucket/stac/geoparquet/h3",
             partition_type="h3",
             resolution=1,
@@ -72,12 +76,8 @@ class TestGetOverlappingGridNamesH3:
 
     @patch("itslive.search.path_exists", return_value=True)
     def test_h3_with_hive_partitions(self, mock_path_exists):
-        geojson = {
-            "type": "Point",
-            "coordinates": [-45.0, 75.0],
-        }
         result = get_overlapping_grid_names(
-            geojson_geometry=geojson,
+            geojson_geometry=self._small_polygon(),
             base_href="s3://bucket/stac/geoparquet/h3",
             partition_type="h3",
             resolution=1,
@@ -91,6 +91,6 @@ class TestGetOverlappingGridNamesH3:
     def test_raises_on_unknown_partition(self):
         with pytest.raises(NotImplementedError):
             get_overlapping_grid_names(
-                geojson_geometry={"type": "Point", "coordinates": [0, 0]},
+                geojson_geometry=self._small_polygon(),
                 partition_type="unknown",
             )

@@ -457,8 +457,6 @@ def serverless_search(
     List[str]
         Asset URLs matching the search criteria.
     """
-    import duckdb
-    import rustac
 
     # ------------------------------------------------------------------
     # Build CQL2 filter expressions from the generic filters dict.
@@ -547,14 +545,14 @@ def serverless_search(
     # ------------------------------------------------------------------
     # Execute queries (duckdb / rustac).
     # ------------------------------------------------------------------
-    con = duckdb.connect()
-    client = rustac.DuckdbClient()
-    con.execute("INSTALL spatial")
-    con.execute("LOAD spatial")
-
     hrefs = []
-    for prefix in search_prefixes:
-        if engine == "duckdb":
+    if engine == "duckdb":
+        import duckdb
+
+        con = duckdb.connect()
+        con.execute("INSTALL spatial")
+        con.execute("LOAD spatial")
+        for prefix in search_prefixes:
             logging.info(f"Filters as SQL: {filters_sql}")
             geojson_str = json.dumps(search_kwargs["intersects"])
             query = f"""
@@ -570,29 +568,30 @@ def serverless_search(
             try:
                 items = con.execute(query).df()
             except duckdb.IOException:
-                # Glob resolved to zero files — tile exists but has no data
-                # for this spatial/temporal/filter combination.
                 logging.debug(f"No parquet files matched under {prefix}, skipping.")
                 continue
             links = items["data_href"].to_list()
             hrefs.extend(links)
+            logging.info(f"Prefix: {prefix} items found: {len(items)}")
 
-        elif engine == "rustac":
+    elif engine == "rustac":
+        import rustac
+
+        client = rustac.DuckdbClient()
+        for prefix in search_prefixes:
             try:
                 items = list(client.search(prefix, **search_kwargs))
             except Exception:
-                # Prefix exists but yielded no items (empty tile / no coverage).
                 logging.debug(f"No items returned for {prefix}, skipping.")
                 continue
             for item in items:
                 for asset in item["assets"].values():
                     if "data" in asset["roles"] and asset["href"].endswith(asset_type):
                         hrefs.append(asset["href"])
+            logging.info(f"Prefix: {prefix} items found: {len(items)}")
 
-        else:
-            raise NotImplementedError(f"Not a valid query engine: {engine}")
-
-        logging.info(f"Prefix: {prefix} items found: {len(items)}")
+    else:
+        raise NotImplementedError(f"Not a valid query engine: {engine}")
 
     return sorted(list(set(hrefs)))
 

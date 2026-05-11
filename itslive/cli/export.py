@@ -2,7 +2,12 @@ import rich_click as click
 from rich import print as rprint
 
 import itslive
-from itslive.cli._shared import Mutex, validate_csv, validate_latitude, validate_longitude
+from itslive.cli._shared import (
+    Mutex,
+    validate_csv,
+    validate_latitude,
+    validate_longitude,
+)
 
 # Use Rich markup
 click.rich_click.USE_RICH_MARKUP = True
@@ -13,20 +18,10 @@ def export_time_series(points, variables, format, outdir):
         itslive.velocity_cubes.export_csv(points, variables, outdir)
     elif format == "netcdf":
         itslive.velocity_cubes.export_netcdf(points, variables, outdir)
+    elif format == "parquet":
+        itslive.velocity_cubes.export_parquet(points, variables, outdir)
     else:
         itslive.velocity_cubes.export_stdout(points, variables)
-    return None
-
-
-def plot_time_series(points, variable, label_by, outdir, stdout):
-    if stdout is not None:
-        # experimental
-        itslive.velocity_cubes.plot_time_series_terminal(points, variable)
-    else:
-        pass
-        # TODO: save plot on outdir
-        # plot = itslive.velocity_cubes.plot_time_series(points, variable, label_by)
-        # plot.save()
     return None
 
 
@@ -75,7 +70,7 @@ def plot_time_series(points, variable, label_by, outdir, stdout):
 )
 @click.option(
     "--format",
-    type=click.Choice(["csv", "netcdf", "stdout"]),
+    type=click.Choice(["csv", "netcdf", "parquet", "stdout"]),
     help="export to fortmat",
 )
 @click.option(

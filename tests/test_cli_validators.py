@@ -4,7 +4,12 @@ import pytest
 import rich_click as click
 
 from itslive.cli.export import validate_csv, validate_latitude, validate_longitude
-from itslive.cli.search import validate_bbox, validate_date, validate_filter, validate_polygon
+from itslive.cli.search import (
+    validate_bbox,
+    validate_date,
+    validate_filter,
+    validate_polygon,
+)
 
 
 class FakeContext:

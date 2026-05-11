@@ -1,4 +1,3 @@
-import pytest
 
 from itslive.search import bucket_cube_name_from_url, point_to_prefix, transform_coord
 
@@ -24,7 +23,7 @@ class TestPointToPrefix:
 
     def test_southern_hemisphere(self):
         result = point_to_prefix(-76.1, -10.0)
-        assert result == "S70W000"
+        assert result == "S70W010"
 
     def test_northern_hemisphere_positive_lon(self):
         result = point_to_prefix(33.5, 76.2)
@@ -53,15 +52,21 @@ class TestPointToPrefix:
 
 class TestTransformCoord:
     def test_transform_4326_to_3413(self):
-        # Greenland roughly: (lon, lat) -> (x, y) in EPSG:3413
-        x, y = transform_coord("4326", "3413", -45.0, 75.0)
+        """Use a longitude off the central meridian so both x and y are non-zero."""
+        x, y = transform_coord("4326", "3413", -50.0, 75.0)
         assert isinstance(x, float)
         assert isinstance(y, float)
         assert abs(x) > 0
         assert abs(y) > 0
 
+    def test_transform_on_central_meridian(self):
+        """EPSG:3413 central meridian is -45°, so lon=-45 gives x=0."""
+        x, y = transform_coord("4326", "3413", -45.0, 75.0)
+        assert x == 0.0
+        assert abs(y) > 0
+
     def test_transform_roundtrip(self):
-        lon, lat = -45.0, 75.0
+        lon, lat = -50.0, 75.0
         x, y = transform_coord("4326", "3413", lon, lat)
         lon2, lat2 = transform_coord("3413", "4326", x, y)
         assert abs(lon - lon2) < 0.1

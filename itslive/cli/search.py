@@ -116,14 +116,16 @@ def validate_filter(ctx, param, value):
             if op not in op_map:
                 raise ValueError(f"Invalid operator: {op} in filter '{filter_str}'")
 
-            # Parse value (try int, then float, then string)
+            # Parse value (try int, then float, then string).
+            # Keep zero-padded strings like "002" as strings.
             try:
                 parsed_value = int(value_str)
+                if str(parsed_value) != value_str:
+                    parsed_value = value_str
             except ValueError:
                 try:
                     parsed_value = float(value_str)
                 except ValueError:
-                    # Keep as string
                     parsed_value = value_str
 
             result.append((prop_name, op_map[op](parsed_value)))

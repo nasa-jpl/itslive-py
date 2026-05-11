@@ -1,11 +1,10 @@
-import datetime
 
 from itslive.velocity_pairs._pairs import coverage
 
 
 class TestCoverage:
     def test_returns_empty_list(self):
-        result = coverage(bbox=[-50, 65, -40, 75])
+        result = coverage(bbox=[-50, 65, -40, 75], polygon=None)
         assert result == []
 
 
