@@ -24,19 +24,6 @@ extra_css:
 
 plugins:
   - search
-  - mkdocstrings:
-      default_handler: python
-      handlers:
-        python:
-          options:
-            docstring_style: google
-            docstring_options:
-              ignore_init_summary: no
-            merge_init_into_class: yes
-            show_submodules: no
-          rendering:
-            show_root_heading: false
-            show_source: false
 
 nav:
   - OVERVIEW: 'index.md'
@@ -60,5 +47,4 @@ markdown_extensions:
 
 watch:
   - docs
-  - notebooks
   - itslive

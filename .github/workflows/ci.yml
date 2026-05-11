@@ -28,7 +28,7 @@ jobs:
           pip install ruff black isort
 
       - name: Check formatting (ruff)
-        run: ruff check itslive tests
+        run: ruff check --exclude notebooks itslive tests
 
       - name: Check formatting (black)
         run: black itslive tests --check
