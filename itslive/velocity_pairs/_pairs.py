@@ -3,7 +3,7 @@ import logging
 import os
 import pathlib
 import sys
-from typing import Any, List, Union
+from typing import Any
 
 import earthaccess
 import requests
@@ -13,19 +13,19 @@ from itslive.search import EQ, GTE, LTE, serverless_search
 
 
 def find(
-    bbox: Union[List[float], None] = None,
-    polygon: Union[List[float], None] = None,
-    geojson: Union[dict, None] = None,
+    bbox: list[float] | None = None,
+    polygon: list[float] | None = None,
+    geojson: dict | None = None,
     percent_valid_pixels: int = 1,
-    mission: Union[None, str] = None,
-    start: Union[None, datetime.date] = None,
-    end: Union[None, datetime.date] = None,
-    min_interval: Union[None, int] = None,
-    max_interval: Union[None, int] = None,
+    mission: None | str = None,
+    start: None | datetime.date = None,
+    end: None | datetime.date = None,
+    min_interval: None | int = None,
+    max_interval: None | int = None,
     engine: str = "stac",
     filters: dict = None,
     **stac_kwargs,
-) -> List[str]:
+) -> list[str]:
     """Returns a list velocity netcdf files based on the provided parameters
 
     Args:
@@ -93,19 +93,19 @@ def find(
 
 
 def find_streaming(
-    bbox: Union[List[float], None] = None,
-    polygon: Union[List[float], None] = None,
-    geojson: Union[dict, None] = None,
+    bbox: list[float] | None = None,
+    polygon: list[float] | None = None,
+    geojson: dict | None = None,
     percent_valid_pixels: int = 1,
-    mission: Union[None, str] = None,
-    start: Union[None, datetime.date] = None,
-    end: Union[None, datetime.date] = None,
-    min_interval: Union[None, int] = None,
-    max_interval: Union[None, int] = None,
+    mission: None | str = None,
+    start: None | datetime.date = None,
+    end: None | datetime.date = None,
+    min_interval: None | int = None,
+    max_interval: None | int = None,
     engine: str = "stac",
     filters: dict = None,
     **stac_kwargs,
-) -> List[str]:
+) -> list[str]:
     """Yields velocity netcdf file URLs one at a time to avoid loading all into memory
 
     This is a streaming version of find() that yields URLs as they are found,
@@ -180,8 +180,12 @@ def find_streaming(
     else:
         end_date = "2025-12-31"
 
-    # Build filters from parameters
+    # Build filters from parameters.
+    # STAC property for time separation is "date_dt" (not min/max_interval_days).
+    # When both min and max are specified we build a compound CQL2 expression
+    # because a dict cannot hold duplicate keys for the same property.
     param_filters = {}
+    extra_cql2_exprs: list[dict] = []
     if percent_valid_pixels > 0:
         param_filters["percent_valid_pixels"] = GTE(percent_valid_pixels)
     if mission:
@@ -193,10 +197,20 @@ def find_streaming(
         platform = mission_to_platform.get(mission.lower() if mission else "")
         if platform:
             param_filters["platform"] = EQ(platform)
-    if min_interval:
-        param_filters["min_interval_days"] = GTE(min_interval)
-    if max_interval:
-        param_filters["max_interval_days"] = LTE(max_interval)
+    if min_interval is not None and max_interval is not None:
+        extra_cql2_exprs.append(
+            {
+                "op": "and",
+                "args": [
+                    {"op": ">=", "args": [{"property": "date_dt"}, min_interval]},
+                    {"op": "<=", "args": [{"property": "date_dt"}, max_interval]},
+                ],
+            }
+        )
+    elif min_interval is not None:
+        param_filters["date_dt"] = GTE(min_interval)
+    elif max_interval is not None:
+        param_filters["date_dt"] = LTE(max_interval)
 
     # Merge with custom filters (custom filters override parameter-based ones)
     if filters:
@@ -289,6 +303,7 @@ def find_streaming(
             cql2_filter_list = (
                 build_cql2_filters_from_dict(final_filters) if final_filters else []
             )
+            cql2_filter_list.extend(extra_cql2_exprs)
             cql2_filter = (
                 build_cql2_filter(cql2_filter_list) if cql2_filter_list else None
             )
@@ -317,17 +332,17 @@ def find_streaming(
 
 
 def coverage(
-    bbox: List[float],
-    polygon: List[float],
+    bbox: list[float],
+    polygon: list[float],
     percent_valid_pixels: int = 1,
-    mission: Union[None, str] = None,
-    start: Union[None, datetime.date] = None,
-    end: Union[None, datetime.date] = None,
-    min_interval: Union[None, int] = None,
-    max_interval: Union[None, int] = None,
+    mission: None | str = None,
+    start: None | datetime.date = None,
+    end: None | datetime.date = None,
+    min_interval: None | int = None,
+    max_interval: None | int = None,
     engine: str = "stac",
     **stac_kwargs,
-) -> List[Any]:
+) -> list[Any]:
     """Returns a list of velocity files counts by year on a given area
 
     Note: The legacy coverage API is no longer available. This function now
@@ -343,7 +358,7 @@ def coverage(
     return []
 
 
-def _download_aws(urls: List[str], path: str) -> List[str]:
+def _download_aws(urls: list[str], path: str) -> list[str]:
     # Closure!
     def _download_file_aws(url: str) -> str:
         local_filename = pathlib.Path(path) / pathlib.Path(url.split("/")[-1])
@@ -358,14 +373,14 @@ def _download_aws(urls: List[str], path: str) -> List[str]:
     return results
 
 
-def _download_nsidc(urls: List[str], path: str) -> List[str]:
+def _download_nsidc(urls: list[str], path: str) -> list[str]:
     auth = earthaccess.login()
-    if auth.auhtenticated:
+    if auth.authenticated:
         results = earthaccess.download(urls, path)
         return results
 
 
-def download(urls: List[str], path: str, limit: int = 2000) -> List[str]:
+def download(urls: list[str], path: str, limit: int = 2000) -> list[str]:
     """Download ITS_LIVE velocity pairs using a list of URLs"""
     os.makedirs(path, exist_ok=True)
     if urls[0].startswith("https://its-live-data.s3.amazonaws.com"):

@@ -1,30 +1,29 @@
 # to get and use geojson datacube catalog
 # for timing data access
+# for datacube xarray/zarr access
+import functools
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import uuid4
 
 import numpy as np
 import pyproj
-
-# for datacube xarray/zarr access
+import pystac_client
 import xarray as xr
 from rich import print as rprint
 from rich.progress import track
 from shapely import geometry
 
 from itslive.dataviz import plot_terminal
-from itslive.search import serverless_search
 
 
-# class to throw time series lookup errors
 class timeseriesException(Exception):
-    pass
+    """Raised when a time series lookup fails."""
 
 
 # STAC catalog configuration
-STAC_CATALOG_URL = "https://stac.itslive.cloud/"
+STAC_CATALOG_URL = "https://stac.itslive.cloud"
 STAC_COLLECTION = "itslive-cubes"
 
 # Annual composite path configuration
@@ -32,12 +31,11 @@ STAC_COLLECTION = "itslive-cubes"
 # e.g. datacube:  .../datacubes/v2-updated-october2024/{REGION}/ITS_LIVE_vel_{EPSG}_G0120_{XY}.zarr
 #      composite: .../composites/annual/v2-updated-september2025/{REGION}/ITS_LIVE_velocity_{EPSG}_120m_{XY}.zarr
 COMPOSITE_VERSION = "v2-updated-september2025"
-_ITS_LIVE_BASE_URL = "https://its-live-data.s3.amazonaws.com/"
 
 
-# keep track of open cubes so that we don't re-open (it is slow to re-read xarray metadata
-# and dimension vectors)
-_open_cubes = {}
+@functools.lru_cache(maxsize=32)
+def _open_cached_dataset(url: str) -> xr.Dataset:
+    return xr.open_dataset(url, engine="zarr", decode_timedelta=True)
 
 
 def _get_projected_xy_point(lon: float, lat: float, projection: str) -> geometry.Point:
@@ -111,7 +109,7 @@ def list_variables() -> None:
     rprint(table)
 
 
-def _merge_default_variables(variables: List[str]) -> set[str]:
+def _merge_default_variables(variables: list[str]) -> set[str]:
     _default_variables = [
         "v",
         "v_error",
@@ -128,7 +126,7 @@ def _merge_default_variables(variables: List[str]) -> set[str]:
     return query_variables
 
 
-def _merge_default_composite_variables(variables: List[str]) -> set[str]:
+def _merge_default_composite_variables(variables: list[str]) -> set[str]:
     """Default variables for annual composite datasets."""
     _default_variables = [
         # Time-varying (per year)
@@ -170,8 +168,8 @@ def _merge_default_composite_variables(variables: List[str]) -> set[str]:
 
 
 def find(
-    points: List[tuple[float, float]],
-) -> List[Dict[str, Any]]:
+    points: list[tuple[float, float]],
+) -> list[dict[str, Any]]:
     """Find the zarr cube information for a given geometry, if 2 values are passed
     it will use the point geometry, if 3 or more values are passed it will
     search using a polygon.
@@ -183,7 +181,7 @@ def find(
         Latitude value in 4326 format e.g. -70.2
     :type second: ``float``
     """
-    cubes: List = []
+    cubes: list = []
     if len(points) == 1:
         point = points[0]
         cubes = find_by_point(lon=point[0], lat=point[1])
@@ -192,159 +190,92 @@ def find(
     return cubes
 
 
+def _search_cubes(
+    roi_geom: dict,
+    geometry_ref: dict,
+) -> list[dict[str, Any]]:
+    """Search for Zarr cubes intersecting the given geometry via the STAC API.
+
+    Args:
+        roi_geom: JSON-Serializable geometry dict for the STAC query.
+        geometry_ref: Geometry dict stored in the result (usually same as roi_geom).
+
+    Returns:
+        List of cube feature dicts with properties including zarr_url, epsg, etc.
+    """
+    try:
+        client = pystac_client.Client.open(STAC_CATALOG_URL)
+
+        search = client.search(
+            intersects=roi_geom,
+            datetime="2000-01-01/2025-12-31",
+            collections=[STAC_COLLECTION],
+        )
+
+        cubes = []
+        for item in search.items():
+            zarr_url = None
+            for asset in item.assets.values():
+                if "data" in (asset.roles or []) and asset.href.endswith(".zarr"):
+                    zarr_url = asset.href
+                    break
+
+            if not zarr_url:
+                continue
+
+            proj_code = item.properties.get("proj:code", "EPSG:3413")
+            epsg = proj_code.replace("EPSG:", "") if proj_code else "3413"
+
+            cubes.append(
+                {
+                    "type": "Feature",
+                    "geometry": geometry_ref,
+                    "properties": {
+                        "zarr_url": zarr_url,
+                        "composite_zarr_url": _datacube_to_composite_url(zarr_url),
+                        "epsg": epsg,
+                        "geometry_epsg": geometry_ref,
+                    },
+                }
+            )
+
+        return cubes
+    except Exception as e:
+        logging.error(f"Error searching STAC catalog: {e}")
+        return []
+
+
 def find_by_bbox(
     lower_left_lon: float,
     lower_left_lat: float,
     upper_right_lon: float,
     upper_right_lat: float,
-) -> List[Dict[str, Any]]:
-    """
-    Finds the zarr cubes that intersect with a given bounding box
-    and returns a list of URLs.
-
-    :param lower_left_lon: lower left longitude
-    :param lower_left_lat: lower left latitude
-    :param upper_right_lon: upper right longitude
-    :param upper_right_lat: upper right latitude
-    :returns: list of URLs for the matching Zarr cubes.
-    """
+) -> list[dict[str, Any]]:
     from shapely.geometry import box, mapping
 
-    box_geom = mapping(
+    roi = mapping(
         box(lower_left_lon, lower_left_lat, upper_right_lon, upper_right_lat)
     )
-
-    stac_params = {
-        "start_date": "2000-01-01",
-        "end_date": "2025-12-31",
-        "roi": box_geom,
-        "collection": STAC_COLLECTION,
-        "engine": "stac",
-        "base_catalog_href": STAC_CATALOG_URL,
-        "asset_type": ".zarr",
-        "filters": {},
-    }
-
-    try:
-        zarr_urls = serverless_search(**stac_params)
-
-        cubes = []
-        for url in zarr_urls:
-            cubes.append(
-                {
-                    "type": "Feature",
-                    "geometry": box_geom,
-                    "properties": {
-                        "zarr_url": url,
-                        "composite_zarr_url": _datacube_to_composite_url(url),
-                        "epsg": "3413",
-                        "geometry_epsg": box_geom,
-                    },
-                }
-            )
-
-        return cubes
-    except Exception as e:
-        logging.error(f"Error searching STAC catalog: {e}")
-        return []
+    return _search_cubes(roi, roi)
 
 
-def find_by_point(lon: float, lat: float) -> List[Dict[str, Any]]:
-    """
-    Finds the zarr cubes that contain a given lon, lat pair.
-
-    :param lon: longitude
-    :param lat: latitude
-    :returns: geojson dictionary with matching cube
-    """
+def find_by_point(lon: float, lat: float) -> list[dict[str, Any]]:
     from shapely.geometry import mapping
 
-    point_geom = mapping(geometry.Point(lon, lat))
-
-    stac_params = {
-        "start_date": "2000-01-01",
-        "end_date": "2025-12-31",
-        "roi": point_geom,
-        "collection": STAC_COLLECTION,
-        "engine": "stac",
-        "base_catalog_href": STAC_CATALOG_URL,
-        "asset_type": ".zarr",
-        "filters": {},
-    }
-
-    try:
-        zarr_urls = serverless_search(**stac_params)
-
-        cubes = []
-        for url in zarr_urls:
-            cubes.append(
-                {
-                    "type": "Feature",
-                    "geometry": point_geom,
-                    "properties": {
-                        "zarr_url": url,
-                        "composite_zarr_url": _datacube_to_composite_url(url),
-                        "epsg": "3413",
-                        "geometry_epsg": point_geom,
-                    },
-                }
-            )
-
-        return cubes
-    except Exception as e:
-        logging.error(f"Error searching STAC catalog: {e}")
-        return []
+    roi = mapping(geometry.Point(lon, lat))
+    return _search_cubes(roi, roi)
 
 
-def find_by_polygon(points: List[tuple[float, float]] = []) -> List[Dict[str, Any]]:
-    """
-    Finds the zarr cubes that contain a given polygon.
-
-    :param points: list of polygon points i.e. [(20.1,80.0),(21.1,81.1), ...]
-    :returns: list of URLs for the matching Zarr cubes
-    """
+def find_by_polygon(points: list[tuple[float, float]] = []) -> list[dict[str, Any]]:
     from shapely.geometry import Polygon, mapping
 
-    polygon_geom = mapping(Polygon(points))
-
-    stac_params = {
-        "start_date": "2000-01-01",
-        "end_date": "2025-12-31",
-        "roi": polygon_geom,
-        "collection": STAC_COLLECTION,
-        "engine": "stac",
-        "base_catalog_href": STAC_CATALOG_URL,
-        "asset_type": ".zarr",
-        "filters": {},
-    }
-
-    try:
-        zarr_urls = serverless_search(**stac_params)
-
-        cubes = []
-        for url in zarr_urls:
-            cubes.append(
-                {
-                    "type": "Feature",
-                    "geometry": polygon_geom,
-                    "properties": {
-                        "zarr_url": url,
-                        "composite_zarr_url": _datacube_to_composite_url(url),
-                        "epsg": "3413",
-                        "geometry_epsg": polygon_geom,
-                    },
-                }
-            )
-
-        return cubes
-    except Exception as e:
-        logging.error(f"Error searching STAC catalog: {e}")
-        return []
+    roi = mapping(Polygon(points))
+    return _search_cubes(roi, roi)
 
 
 def get_time_series(
-    points: List[tuple[float, float]], variables: List[str] = ["v"]
-) -> List[Dict[str, Any]]:
+    points: list[tuple[float, float]], variables: list[str] = ["v"]
+) -> list[dict[str, Any]]:
     """
     For the points in the list, returns a list of dictionaries - each one containing:
         an xarray DataArray (time series) for each variable on the list for each of the lon lat points.
@@ -354,7 +285,7 @@ def get_time_series(
     :returns: list of dictionaries with coordinates and xarray time series Datasets for the nearest neighbors to the points
                 ITS_LIVE processes on a 120 m grid, so nearest points will be close to requested points
     """
-    velocity_ts: List = []
+    velocity_ts: list = []
     variables = _merge_default_variables(variables)
     for point in points:
         lon = point[0]
@@ -366,13 +297,7 @@ def get_time_series(
             zarr_url = cube["properties"]["zarr_url"]
             cube_url = zarr_url.replace("http://", "https://")
             projected_point = _get_projected_xy_point(lon, lat, projection)
-            # if we have already opened this cube, don't open it again
-            if cube_url in _open_cubes:
-                xr_da = _open_cubes[cube_url]
-            else:
-                # this way xarray figures out the s3:// or https://
-                xr_da = xr.open_dataset(cube_url, engine="zarr", decode_timedelta=True)
-                _open_cubes[cube_url] = xr_da
+            xr_da = _open_cached_dataset(cube_url)
             time_series = xr_da[variables].sel(
                 x=projected_point.x, y=projected_point.y, method="nearest"
             )
@@ -407,10 +332,9 @@ def get_time_series(
     return velocity_ts
 
 
-# Mark F.
 def get_annual_time_series(
-    points: List[tuple[float, float]], variables: List[str] = ["v"]
-) -> List[Dict[str, Any]]:
+    points: list[tuple[float, float]], variables: list[str] = ["v"]
+) -> list[dict[str, Any]]:
     """
     For the points in the list, returns annual composite velocity time series.
 
@@ -419,7 +343,7 @@ def get_annual_time_series(
     :returns: list of dictionaries with coordinates and xarray time series
               Datasets from annual composites
     """
-    velocity_ts: List = []
+    velocity_ts: list = []
     variables = _merge_default_composite_variables(variables)
 
     for point in points:
@@ -447,14 +371,7 @@ def get_annual_time_series(
             composite_url_https = composite_url.replace("http://", "https://")
             projected_point = _get_projected_xy_point(lon, lat, projection)
 
-            # Use cached dataset or open new one
-            if composite_url_https in _open_cubes:
-                xr_da = _open_cubes[composite_url_https]
-            else:
-                xr_da = xr.open_dataset(
-                    composite_url_https, engine="zarr", decode_timedelta=True
-                )
-                _open_cubes[composite_url_https] = xr_da
+            xr_da = _open_cached_dataset(composite_url_https)
 
             time_series = xr_da[variables].sel(
                 x=projected_point.x, y=projected_point.y, method="nearest"
@@ -486,9 +403,9 @@ def get_annual_time_series(
 
 
 def export_csv(
-    points: List[tuple[float, float]],
-    variables: List[str] = ["v"],
-    outdir: Optional[str] = None,
+    points: list[tuple[float, float]],
+    variables: list[str] = ["v"],
+    outdir: str | None = None,
 ) -> None:
     """Exports a list of ITS_LIVE glacier velocity variables to csv files"""
 
@@ -551,10 +468,58 @@ def export_csv(
             rprint(f"[red on black]No data found at[/] lon: {lon}, lat: {lat}")
 
 
+def export_parquet(
+    points: list[tuple[float, float]],
+    variables: list[str] = ["v"],
+    outdir: str | None = None,
+) -> None:
+    """Exports a list of ITS_LIVE glacier velocity variables to parquet files."""
+
+    query_variables = _merge_default_variables(variables)
+
+    outdir = f"./itslive-{uuid4()}" if outdir is None else outdir
+    Path(outdir).mkdir(parents=True, exist_ok=True)
+
+    for point in track(
+        points,
+        description=f"Processing {len(points)} coordinates...",
+        total=len(points),
+    ):
+        lon = round(point[0], 4)
+        lat = round(point[1], 4)
+        result_series = get_time_series([(lon, lat)], query_variables)
+        if len(result_series):
+            series = result_series[0]["time_series"]
+
+            df = series.to_dataframe()
+            df["lon"] = lon
+            df["lat"] = lat
+            df = df.rename(
+                columns={
+                    "satellite_img1": "satellite",
+                    "mission_img1": "mission",
+                    "v": "v [m/yr]",
+                    "v_error": "v_error [m/yr]",
+                    "vx": "vx [m/yr]",
+                    "vx_error": "vx_error [m/yr]",
+                    "vy": "vy [m/yr]",
+                    "vy_error": "vy_error [m/yr]",
+                }
+            )
+            df["epsg"] = series.attrs["projection"]
+            if "date_dt" in df.columns:
+                df["date_dt [days]"] = df["date_dt"].dt.days
+            ts = df.dropna()
+            file_name = f"LON{lon}--LAT{lat}.parquet"
+            ts.to_parquet(f"{outdir}/{file_name}")
+        else:
+            rprint(f"[red on black]No data found at[/] lon: {lon}, lat: {lat}")
+
+
 def export_netcdf(
-    points: List[tuple[float, float]],
-    variables: List[str] = ["v"],
-    outdir: Optional[str] = None,
+    points: list[tuple[float, float]],
+    variables: list[str] = ["v"],
+    outdir: str | None = None,
 ) -> None:
     """Exports a list of ITS_LIVE glacier velocity variables to netcdf files"""
 
@@ -581,8 +546,8 @@ def export_netcdf(
 
 
 def export_stdout(
-    points: List[tuple[float, float]],
-    variables: List[str] = ["v"],
+    points: list[tuple[float, float]],
+    variables: list[str] = ["v"],
 ) -> None:
     """Exports a list of ITS_LIVE glacier velocity variables to stdout"""
 
@@ -625,20 +590,11 @@ def export_stdout(
             rprint(f"[red on black] No data found at [/] lon: {lon}, lat: {lat}")
 
 
-def plot_time_series(
-    points: List[tuple[float, float]],
-    variable: str = "v",
-    label_by: str = "location",
-    outdir: Optional[str] = None,
-) -> Any:
-    return None
-
-
 def plot_time_series_terminal(
-    points: List[tuple[float, float]],
-    variable: List[str] = ["v"],
+    points: list[tuple[float, float]],
+    variable: list[str] = ["v"],
     label_by: str = "location",
-    outdir: Optional[str] = None,
+    outdir: str | None = None,
 ):
     for point in track(
         points,
