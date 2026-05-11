@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "itslive"
-version = "0.5.1"
+version = "0.6.0"
 description = "Python client for ITSLIVE glacier velocity data"
 authors = [{name = "Luis Lopez", email = "luis.lopez@nsidc.org"}]
 license = {text = "GPL-3.0-only"}
@@ -101,7 +101,7 @@ exclude_lines = [
 ]
 
 [tool.bumpversion]
-current_version = "0.5.1"
+current_version = "0.6.0"
 commit = true
 tag = true
 tag_name = "v{new_version}"
