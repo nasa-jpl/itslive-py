@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-05-11
+
+* bug fixes
+    * fixed STAC catalog URL in CLI help and docstrings (`stac.its-live.org` → `stac.itslive.cloud`)
+    * fixed H3 resolution labels: resolution 1 is coarser, 2 is finer (were swapped)
+    * fixed CLI docstring example using invalid `--resolution 3` (only 1, 2 valid)
+    * fixed `export.py` help string collapsed by formatter (implicit string concatenation)
+* documentation
+    * clarified geoparquet comment in README and docs index
+    * removed mkdocstrings plugin (unused, was slowing build from minutes to 0.3s)
+    * removed mkdocs-jupyter and jupyter-related docs dependencies (conflict with mkdocs-material)
+    * loosened pinned dependency versions (earthaccess, pandas, pyproj, Shapely, xarray, zarr, etc.)
+* maintenance
+    * excluded `notebooks/` from ruff lint (legacy code, not part of the library)
+    * added `--exclude notebooks` to CI ruff check command
+    * applied ruff formatting across all source, test, and notebook files
+    * removed `widgetsnbextension`, `ipympl`, `ipywidgets`, `jupyterlab`, `dask`, `h5netcdf` from docs extras
+
 
 * [v0.6.0] 2026-05-10
 * features
