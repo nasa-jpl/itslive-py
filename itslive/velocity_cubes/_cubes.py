@@ -18,7 +18,7 @@ from shapely import geometry
 from itslive.dataviz import plot_terminal
 
 
-class timeseriesException(Exception):
+class timeseriesException(Exception):  # noqa: N801, N818
     """Raised when a time series lookup fails."""
 
 

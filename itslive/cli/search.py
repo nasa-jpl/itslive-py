@@ -89,13 +89,13 @@ def validate_filter(ctx, param, value):
 
     # Match the first occurrence of a known operator token surrounded (or
     # preceded) by colons: :>=:  :<=:  :!=:  :=:  :>:  :<:
-    _OP_RE = re.compile(r":(>=|<=|!=|=|>|<):")
+    _op_re = re.compile(r":(>=|<=|!=|=|>|<):")
 
     result = []
 
     for filter_str in value:
         try:
-            m = _OP_RE.search(filter_str)
+            m = _op_re.search(filter_str)
             if not m:
                 raise ValueError(f"Invalid filter format in '{filter_str}'")
 
@@ -307,32 +307,32 @@ def search(
 ):
     """
     Search for ITS_LIVE velocity granules and stream URLs to stdout.
-    
+
     This command is optimized for large result sets (e.g., 1M+ URLs) by
     streaming results to stdout one at a time, avoiding loading everything into memory.
-    
+
     [bold]Examples:[/]
-    
+
       [dim]# Example 1: Search using STAC API (default)[/]
       $ itslive-search --bbox -50,65,-40,75 --start 2020-01-01 --end 2022-12-31 > urls.txt
-    
+
       [dim]# Example 2: Search using geoparquet with H3 hexagonal partitioning (resolution 2)[/]
       $ itslive-search --bbox -50,65,-40,75 --engine duckdb \\
           --partition-type h3 --resolution 2 > urls.txt
-    
+
       [dim]# Example 3: Search using geoparquet with H3 resolution 3 (finer grid)[/]
       $ itslive-search --bbox -50,65,-40,75 --engine rustac \\
           --partition-type h3 --resolution 3 > urls.txt
-    
+
       [dim]# Example 4: Search using geoparquet with lat/lon geographic partitioning[/]
       $ itslive-search --bbox -50,65,-40,75 --engine duckdb \\
           --partition-type latlon --base-catalog-href \\
           s3://its-live-data/test-space/stac/geoparquet/latlon > urls.txt
-    
+
       [dim]# Example 5: Search with filters[/]
       $ itslive-search --bbox -50,65,-40,75 --mission sentinel1 \\
           --min-interval 12 --max-interval 36
-    
+
       [dim]# Example 6: Count results only[/]
       $ itslive-search --bbox -50,65,-40,75 --count-only
     """

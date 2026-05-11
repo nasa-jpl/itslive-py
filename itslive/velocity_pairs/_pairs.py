@@ -324,8 +324,7 @@ def find_streaming(
         else:
             urls = serverless_search(**stac_params)
             print(f"Found {len(urls)} pairs", file=sys.stderr)
-            for url in urls:
-                yield url
+            yield from urls
     except Exception as e:
         logging.error(f"Error searching {catalog_desc}: {e}")
         return

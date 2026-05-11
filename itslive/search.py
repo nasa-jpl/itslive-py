@@ -612,8 +612,8 @@ def point_to_prefix(lat: float, lon: float, dir_path: str = None) -> str:
     Returns a string (for example, N78W124) for directory name based on
     granule centerpoint lat,lon
     """
-    NShemi_str = "N" if lat >= 0.0 else "S"
-    EWhemi_str = "E" if lon >= 0.0 else "W"
+    nshemi_str = "N" if lat >= 0.0 else "S"
+    ewhemi_str = "E" if lon >= 0.0 else "W"
 
     outlat = int(10 * np.trunc(np.abs(lat / 10.0)))
     if outlat == 90:
@@ -624,7 +624,7 @@ def point_to_prefix(lat: float, lon: float, dir_path: str = None) -> str:
     if outlon >= 180:
         outlon = 170
 
-    dirstring = f"{NShemi_str}{outlat:02d}{EWhemi_str}{outlon:03d}"
+    dirstring = f"{nshemi_str}{outlat:02d}{ewhemi_str}{outlon:03d}"
     if dir_path is not None:
         dirstring = os.path.join(dir_path, dirstring)
 
