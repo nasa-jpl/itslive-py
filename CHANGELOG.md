@@ -3,6 +3,24 @@
 ## [Unreleased]
 
 
+* [v0.6.0] 2026-05-10
+* features
+    * parquet export format (`itslive-export --format parquet`)
+    * quickstart documentation and mkdocs GitHub Pages workflow
+    * exported STAC constants (`STAC_CATALOG_URL`, `STAC_COLLECTION`)
+* bug fixes
+    * fixed `get_time_series` returning no data for Antarctic coordinates (issue #9)
+    * fixed `duckdb`/`rustac` unconditional imports causing `ModuleNotFoundError`
+    * fixed `min_interval`/`max_interval` using wrong STAC property (`date_dt`, not `min_interval_days`)
+    * fixed `_download_nsidc` typo (`auhtenticated` → `authenticated`)
+    * fixed CLI filter parsing dropping zero-padded strings (`"002"` → `2`)
+* maintenance
+    * added `duckdb`, `rustac`, `h3`, `pyarrow` to core dependencies
+    * removed orphaned/duplicate code (`plot_time_series` stub, unused constants)
+    * modernized type annotations (`List[str]` → `list[str]`, `Optional` → `|`)
+    * fixed all 9 pre-existing test failures (h3 v4, Python 3.13 compat, etc.)
+    * comprehensive unit tests for cube STAC search, parquet export, interval filters
+
 * [v0.5.1] 2026-03-05
 * features
     * updated catalog to Feb 2026
