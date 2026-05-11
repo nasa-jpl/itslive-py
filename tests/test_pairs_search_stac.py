@@ -1,8 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from itslive.velocity_pairs._pairs import find, find_streaming
+from itslive.velocity_pairs._pairs import find_streaming
 
 
 def _make_mock_item(href: str):
