@@ -29,7 +29,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install ".[docs]"
-          pip install markdown-callouts
+
+      - name: Prepare notebooks
+        run: cp -r notebooks docs/notebooks
 
       - name: Build site
         run: mkdocs build
