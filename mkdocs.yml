@@ -1,6 +1,6 @@
 site_name: itslive
 site_description: Client library for NASA Earthdata APIs
-site_url: https://github.com/nasa-jpl/itslive-vortex
+site_url: https://nasa-jpl.github.io/itslive-py
 
 theme:
   name: 'material'
@@ -15,8 +15,8 @@ theme:
         icon: material/toggle-switch
         name: Switch to light mode
 
-repo_name: nasa-jpl/itslive-vortex
-repo_url: https://github.com/nasa-jpl/itslive-vortex
+repo_name: nasa-jpl/itslive-py
+repo_url: https://github.com/nasa-jpl/itslive-py
 edit_uri: ''
 
 extra_css:
@@ -42,6 +42,7 @@ plugins:
 
 nav:
   - OVERVIEW: 'index.md'
+  - QUICKSTART: 'quickstart.md'
   - TUTORIALS:
   - HOW-TO:
   - USER REFERENCE:

@@ -180,8 +180,12 @@ def find_streaming(
     else:
         end_date = "2025-12-31"
 
-    # Build filters from parameters
+    # Build filters from parameters.
+    # STAC property for time separation is "date_dt" (not min/max_interval_days).
+    # When both min and max are specified we build a compound CQL2 expression
+    # because a dict cannot hold duplicate keys for the same property.
     param_filters = {}
+    extra_cql2_exprs: list[dict] = []
     if percent_valid_pixels > 0:
         param_filters["percent_valid_pixels"] = GTE(percent_valid_pixels)
     if mission:
@@ -193,10 +197,20 @@ def find_streaming(
         platform = mission_to_platform.get(mission.lower() if mission else "")
         if platform:
             param_filters["platform"] = EQ(platform)
-    if min_interval:
-        param_filters["min_interval_days"] = GTE(min_interval)
-    if max_interval:
-        param_filters["max_interval_days"] = LTE(max_interval)
+    if min_interval is not None and max_interval is not None:
+        extra_cql2_exprs.append(
+            {
+                "op": "and",
+                "args": [
+                    {"op": ">=", "args": [{"property": "date_dt"}, min_interval]},
+                    {"op": "<=", "args": [{"property": "date_dt"}, max_interval]},
+                ],
+            }
+        )
+    elif min_interval is not None:
+        param_filters["date_dt"] = GTE(min_interval)
+    elif max_interval is not None:
+        param_filters["date_dt"] = LTE(max_interval)
 
     # Merge with custom filters (custom filters override parameter-based ones)
     if filters:
@@ -289,6 +303,7 @@ def find_streaming(
             cql2_filter_list = (
                 build_cql2_filters_from_dict(final_filters) if final_filters else []
             )
+            cql2_filter_list.extend(extra_cql2_exprs)
             cql2_filter = (
                 build_cql2_filter(cql2_filter_list) if cql2_filter_list else None
             )
