@@ -120,6 +120,7 @@ venv.bak/
 
 # mkdocs documentation
 /site
+docs/notebooks/
 
 # mypy
 .mypy_cache/

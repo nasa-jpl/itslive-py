@@ -38,19 +38,18 @@ plugins:
             show_root_heading: false
             show_source: false
   - mkdocs-jupyter:
-      execute: True
+      execute: False
 
 nav:
   - OVERVIEW: 'index.md'
   - QUICKSTART: 'quickstart.md'
-  - TUTORIALS:
   - HOW-TO:
-  - USER REFERENCE:
-      - API:
-          - 'Search and Access of ITS_LIVE data': 'user-reference/api/api.md'
-      - Glossary:
-          - 'NASA Glossary': 'user-reference/glossary/nasa-glossary.md'
-          - 'Cloud Computing Terminology': 'user-reference/glossary/cloud-glossary.md'
+      - 'Extract time series from a cube': 'quickstart.md'
+      - 'Search and export granules': 'index.md'
+  - NOTEBOOKS:
+      - 'Introduction': 'notebooks/introduction.ipynb'
+      - 'Point time series': 'notebooks/ITS_LIVE_plot_point_timeseries.ipynb'
+      - 'Profile time series': 'notebooks/ITS_LIVE_plot_profile_timeseries.ipynb'
 
 markdown_extensions:
   - admonition

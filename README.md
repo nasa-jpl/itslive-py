@@ -22,7 +22,8 @@
 </p>
 
 For information on running tests, bumping versions, CI workflows, and building
-documentation locally, see the [Development Guide](DEVELOPMENT.md).
+documentation locally, see the
+[Development Guide](https://github.com/nasa-jpl/itslive-py/blob/main/DEVELOPMENT.md).
 
 ## Installing *itslive*
 
