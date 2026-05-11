@@ -50,7 +50,18 @@ class TestValidatePolygon:
         result = validate_polygon(
             FakeContext(), None, "-50,65,-48,65,-48,67,-50,67,-50,65"
         )
-        assert result == [-50.0, 65.0, -48.0, 65.0, -48.0, 67.0, -50.0, 67.0, -50.0, 65.0]
+        assert result == [
+            -50.0,
+            65.0,
+            -48.0,
+            65.0,
+            -48.0,
+            67.0,
+            -50.0,
+            67.0,
+            -50.0,
+            65.0,
+        ]
 
     def test_too_few_values(self):
         with pytest.raises(click.BadParameter):

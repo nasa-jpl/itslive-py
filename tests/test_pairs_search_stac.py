@@ -20,21 +20,21 @@ class TestIntervalFilter:
     def test_min_and_max_interval_use_date_dt(self, mock_open):
         mock_client = MagicMock()
         mock_search = MagicMock()
-        mock_search.items.return_value = [
-            _make_mock_item("https://s3/data.nc")
-        ]
+        mock_search.items.return_value = [_make_mock_item("https://s3/data.nc")]
         mock_client.search.return_value = mock_search
         mock_open.return_value = mock_client
 
-        list(find_streaming(
-            bbox=[-50, 65, -40, 75],
-            min_interval=7,
-            max_interval=30,
-            start="2014-01-01",
-            end="2014-06-01",
-            percent_valid_pixels=0,
-            engine="stac",
-        ))
+        list(
+            find_streaming(
+                bbox=[-50, 65, -40, 75],
+                min_interval=7,
+                max_interval=30,
+                start="2014-01-01",
+                end="2014-06-01",
+                percent_valid_pixels=0,
+                engine="stac",
+            )
+        )
 
         call_kwargs = mock_client.search.call_args[1]
         cql2 = call_kwargs.get("filter")
@@ -54,14 +54,16 @@ class TestIntervalFilter:
         mock_client.search.return_value = mock_search
         mock_open.return_value = mock_client
 
-        list(find_streaming(
-            bbox=[-50, 65, -40, 75],
-            min_interval=12,
-            start="2014-01-01",
-            end="2014-06-01",
-            percent_valid_pixels=0,
-            engine="stac",
-        ))
+        list(
+            find_streaming(
+                bbox=[-50, 65, -40, 75],
+                min_interval=12,
+                start="2014-01-01",
+                end="2014-06-01",
+                percent_valid_pixels=0,
+                engine="stac",
+            )
+        )
 
         call_kwargs = mock_client.search.call_args[1]
         cql2 = call_kwargs.get("filter")
@@ -78,14 +80,16 @@ class TestIntervalFilter:
         mock_client.search.return_value = mock_search
         mock_open.return_value = mock_client
 
-        list(find_streaming(
-            bbox=[-50, 65, -40, 75],
-            max_interval=36,
-            start="2014-01-01",
-            end="2014-06-01",
-            percent_valid_pixels=0,
-            engine="stac",
-        ))
+        list(
+            find_streaming(
+                bbox=[-50, 65, -40, 75],
+                max_interval=36,
+                start="2014-01-01",
+                end="2014-06-01",
+                percent_valid_pixels=0,
+                engine="stac",
+            )
+        )
 
         call_kwargs = mock_client.search.call_args[1]
         cql2 = call_kwargs.get("filter")
@@ -102,13 +106,15 @@ class TestIntervalFilter:
         mock_client.search.return_value = mock_search
         mock_open.return_value = mock_client
 
-        list(find_streaming(
-            bbox=[-50, 65, -40, 75],
-            start="2014-01-01",
-            end="2014-06-01",
-            percent_valid_pixels=0,
-            engine="stac",
-        ))
+        list(
+            find_streaming(
+                bbox=[-50, 65, -40, 75],
+                start="2014-01-01",
+                end="2014-06-01",
+                percent_valid_pixels=0,
+                engine="stac",
+            )
+        )
 
         call_kwargs = mock_client.search.call_args[1]
         cql2 = call_kwargs.get("filter")

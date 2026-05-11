@@ -14,7 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 def test_imports():
-    functions = ["find", "find_by_point", "get_time_series", "export_parquet", "export_csv"]
+    functions = [
+        "find",
+        "find_by_point",
+        "get_time_series",
+        "export_parquet",
+        "export_csv",
+    ]
     from itslive import velocity_cubes
 
     assert velocity_cubes
@@ -50,8 +56,12 @@ def test_export_parquet_creates_file():
     }
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        with patch("itslive.velocity_cubes._cubes.get_time_series", return_value=[mock_result]):
-            with patch("itslive.velocity_cubes._cubes.track", side_effect=lambda x, **kw: x):
+        with patch(
+            "itslive.velocity_cubes._cubes.get_time_series", return_value=[mock_result]
+        ):
+            with patch(
+                "itslive.velocity_cubes._cubes.track", side_effect=lambda x, **kw: x
+            ):
                 cubes.export_parquet([(-49.09, 70.0)], variables=["v"], outdir=tmpdir)
 
         import os

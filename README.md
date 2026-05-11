@@ -141,7 +141,7 @@ The duckdb engine queries geoparquet files directly from S3, which is faster for
 
 **CLI usage:**
 ```bash
-# Search a large region using geoparquet
+# Search using duckdb engine with H3-geoparquet
 itslive-search --bbox -50,65,-40,75 \
   --engine duckdb \
   --partition-type h3 \

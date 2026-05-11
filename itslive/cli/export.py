@@ -57,9 +57,9 @@ def export_time_series(points, variables, format, outdir):
     multiple=True,
     default=["v"],
     help=(
-        "v: velocity"
-        "v_error: error in v"
-        "vx: Velocity x component"
+        "v: velocity, "
+        "v_error: error in v, "
+        "vx: Velocity x component, "
         "vy: Velocity y component"
     ),
 )

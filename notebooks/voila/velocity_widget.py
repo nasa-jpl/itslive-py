@@ -12,12 +12,15 @@ import markdown
 import matplotlib.dates as pldates
 import numpy as np
 import pandas as pd
+
 # import itslive datacube tools for working with cloun-based datacubes
 from datacube_tools import DATACUBETOOLS as dctools
+
 # to get and use geojson datacube catalog
 # for datacube xarray/zarr access
 from IPython.display import display
 from ipywidgets import HTML, FileUpload, widgets
+
 # for plotting time series
 from matplotlib import pyplot as plt
 
@@ -48,7 +51,7 @@ class ITSLIVE:
         self._last_click = None
         self.fig, self.fig_h = plt.figure(1), plt.figure(2)
         self.ax, self.ax_h = self.fig.add_subplot(111), self.fig_h.add_subplot(111)
-        self.canvas = widgets.Output(layout={'border': '0px solid black'})
+        self.canvas = widgets.Output(layout={"border": "0px solid black"})
 
         # self._initialize_widgets()
 
@@ -138,14 +141,14 @@ class ITSLIVE:
                 "fillOpacity": 0.5,
             },
         )
-        
+
         if projection == "Global":
             self.map = ipyleaflet.Map(
                 basemap=self._map_base_layer,
                 double_click_zoom=False,
                 scroll_wheel_zoom=True,
                 center=[57.20, -49.43],
-                zoom=4
+                zoom=4,
                 # layout=ipywidgets.Layout(height="100%", max_height="100%", display="flex")
             )
 
@@ -156,7 +159,6 @@ class ITSLIVE:
             self.map.world_copy_jump = True
 
         else:
-            
             self.map = ipyleaflet.Map(
                 center=(-90, 0),
                 zoom=3,
@@ -174,27 +176,23 @@ class ITSLIVE:
                     """,
                 transparent=True,
                 opacity=0.5,
-                url='https://tiles.arcgis.com/tiles/C8EMgrsFcRFL6LrL/arcgis/rest/services/antarctic_ibcso_contours/MapServer/tile/{z}/{y}/{x}',
-                crs=ipyleaflet.projections.EPSG3031.ESRIImagery
+                url="https://tiles.arcgis.com/tiles/C8EMgrsFcRFL6LrL/arcgis/rest/services/antarctic_ibcso_contours/MapServer/tile/{z}/{y}/{x}",
+                crs=ipyleaflet.projections.EPSG3031.ESRIImagery,
             )
 
             self._map_iceshelf_names_layer = ipyleaflet.WMSLayer(
                 layers="1",
-                format='image/png32',
+                format="image/png32",
                 transparent=True,
-                url='https://gis.ngdc.noaa.gov/arcgis/services/antarctic/reference/MapServer/WMSServer',
-                crs=ipyleaflet.projections.EPSG3031.ESRIImagery
+                url="https://gis.ngdc.noaa.gov/arcgis/services/antarctic/reference/MapServer/WMSServer",
+                crs=ipyleaflet.projections.EPSG3031.ESRIImagery,
             )
 
             self.map.add_layer(self._map_iceshelf_names_layer)
-            self.map.add_layer(self._map_contours_layer)        
-        
-        
-        
-#         self._map_velocity_layer.base = True
-#         self._map_base_layer.base = True
+            self.map.add_layer(self._map_contours_layer)
 
-
+        #         self._map_velocity_layer.base = True
+        #         self._map_base_layer.base = True
 
         self.map.add_control(
             ipyleaflet.MeasureControl(
@@ -319,12 +317,12 @@ class ITSLIVE:
             icon="file-export",
             style={"description_width": "initial"},
         )
-        
+
         self._control_projection = widgets.Dropdown(
-            options=['Global', 'Antarctic'],
-            description='Hemisphere:',
+            options=["Global", "Antarctic"],
+            description="Hemisphere:",
             disabled=False,
-            value='Global'
+            value="Global",
         )
 
         self._data_link = widgets.HTML(value="<br>")
@@ -371,9 +369,9 @@ class ITSLIVE:
 
         def export_ts(event):
             self.export_data()
-            
+
         def change_projection(change):
-            if change['type'] == 'change' and change['name'] == 'value':
+            if change["type"] == "change" and change["name"] == "value":
                 self.display(projection=self._control_projection.value)
 
         self._export_button.on_click(export_ts)
@@ -491,7 +489,6 @@ class ITSLIVE:
         )
         self._instructions.set_title(0, title="Instructions")
 
-
         self.ui = widgets.GridBox(
             [
                 widgets.VBox(
@@ -563,8 +560,6 @@ class ITSLIVE:
             "instructions": None,
         }
         self.set_config(self.config)
-    
-
 
     def display(self, render_sidecar=False, mobile=True, projection="Global"):
         if render_sidecar:
@@ -580,7 +575,7 @@ class ITSLIVE:
                 display(self.ui)
         else:
             self.canvas.clear_output()
-           
+
             self._initialize_widgets(render_mobile=mobile, projection=projection)
             self.set_config(self.config)
             self.map.default_style = {"cursor": "crosshair"}
@@ -651,7 +646,7 @@ class ITSLIVE:
         html_for_marker = f"""
         <div>
             <h1 style="position: absolute;left: -0.2em; top: -2.5rem; font-size: 2rem;">
-            <span style="color: rgba({color[0]*100}%,{color[1]*100}%,{color[2]*100}%, {color[3]});
+            <span style="color: rgba({color[0] * 100}%,{color[1] * 100}%,{color[2] * 100}%, {color[3]});
                 width: 2rem;height: 2rem; display: block;position: relative;transform: rotate(45deg);">
                 <strong>+</strong>
             </span>
@@ -880,7 +875,7 @@ class ITSLIVE:
 
             if self.config["verbose"]:
                 print(
-                    f"elapsed time: {total_time:10.2f} - {len(ds_velocity_point)/total_time:6.1f} points per second",
+                    f"elapsed time: {total_time:10.2f} - {len(ds_velocity_point) / total_time:6.1f} points per second",
                     flush=True,
                 )
             self.color_index += 1
@@ -941,9 +936,7 @@ class ITSLIVE:
 
         shutil.rmtree(f"data/{dir_name}/series")
         if self.config["data_link"]:
-            self.config[
-                "data_link"
-            ].value = f"""
+            self.config["data_link"].value = f"""
             <a target="_blank" href="data/{dir_name}/itslive-data.zip" >
                 <div class="jupyter-button mod-warning">Download Data</div>
             </a>
@@ -983,10 +976,10 @@ class ITSLIVE:
             self.fig.canvas.draw()
             self.fig_h.tight_layout()
             self.fig_h.canvas.draw()
-            self.ax.grid(axis='x')
+            self.ax.grid(axis="x")
             # start, end = ax.get_xlim
 
-            loc = pldates.YearLocator() # this locator puts ticks at regular intervals
+            loc = pldates.YearLocator()  # this locator puts ticks at regular intervals
             self.ax.xaxis.set_major_locator(loc)
 
             years = self.ax.get_xticklabels()

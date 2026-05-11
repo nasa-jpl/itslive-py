@@ -253,9 +253,7 @@ def find_by_bbox(
 ) -> list[dict[str, Any]]:
     from shapely.geometry import box, mapping
 
-    roi = mapping(
-        box(lower_left_lon, lower_left_lat, upper_right_lon, upper_right_lat)
-    )
+    roi = mapping(box(lower_left_lon, lower_left_lat, upper_right_lon, upper_right_lat))
     return _search_cubes(roi, roi)
 
 

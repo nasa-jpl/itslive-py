@@ -30,9 +30,7 @@ class Mutex(click.Option):
 
 def validate_latitude(ctx, param, lat):
     if lat is not None and not (-90.0 <= lat <= 90.0):
-        raise click.BadParameter(
-            f"Invalid latitude: {lat}, must be between -90 and 90"
-        )
+        raise click.BadParameter(f"Invalid latitude: {lat}, must be between -90 and 90")
     return lat
 
 

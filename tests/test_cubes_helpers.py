@@ -45,7 +45,9 @@ class TestDatacubeToCompositeUrl:
             "ITS_LIVE_vel_EPSG3413_G0120_X-50000_Y-1650000.zarr"
         )
         composite = _datacube_to_composite_url(datacube)
-        assert composite.startswith("https://its-live-data.s3.amazonaws.com/composites/annual/")
+        assert composite.startswith(
+            "https://its-live-data.s3.amazonaws.com/composites/annual/"
+        )
         assert "N70W040" in composite
         assert "ITS_LIVE_velocity_EPSG3413_120m_X-50000_Y-1650000.zarr" in composite
         assert "v2-updated-september2025" in composite

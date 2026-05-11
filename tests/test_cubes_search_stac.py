@@ -126,8 +126,10 @@ class TestSearchCubesUnit:
             from itslive.velocity_cubes import find_by_polygon
 
             points = [
-                (-50.0, 65.0), (-40.0, 65.0),
-                (-40.0, 75.0), (-50.0, 75.0),
+                (-50.0, 65.0),
+                (-40.0, 65.0),
+                (-40.0, 75.0),
+                (-50.0, 75.0),
                 (-50.0, 65.0),
             ]
             find_by_polygon(points)

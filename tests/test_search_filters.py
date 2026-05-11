@@ -125,7 +125,7 @@ class TestExprToSql:
 
     def test_property_with_colon_is_quoted(self):
         expr = {"op": "=", "args": [{"property": "proj:code"}, "EPSG:3413"]}
-        assert expr_to_sql(expr) == '"proj:code" = \'EPSG:3413\''
+        assert expr_to_sql(expr) == "\"proj:code\" = 'EPSG:3413'"
 
     def test_value_with_colon_not_quoted_as_property(self):
         expr = {"op": "=", "args": [{"property": "proj:code"}, "EPSG:3413"]}
