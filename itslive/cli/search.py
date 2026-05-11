@@ -167,7 +167,7 @@ def validate_filter(ctx, param, value):
     default="stac",
     help=(
         "Search engine backend. "
-        "[dim]stac: STAC API (default) - uses https://stac.its-live.org[/] "
+        "[dim]stac: STAC API (default) - uses https://stac.itslive.cloud[/] "
         "[dim]duckdb/rustac: Geoparquet with S3 - must specify --base-catalog-href[/]"
     ),
 )
@@ -233,7 +233,7 @@ def validate_filter(ctx, param, value):
     type=click.Choice([1, 2], case_sensitive=False),
     default=1,
     show_default=True,
-    help="H3 hexagonal resolution [dim]default: 1 (finer), 2 (coarser)[/]. "
+    help="H3 hexagonal resolution [dim]default: 1 (coarser), 2 (finer)[/]. "
     "[dim]Only used with --partition-type h3[/]",
 )
 @click.option(
@@ -320,9 +320,9 @@ def search(
       $ itslive-search --bbox -50,65,-40,75 --engine duckdb \\
           --partition-type h3 --resolution 2 > urls.txt
 
-      [dim]# Example 3: Search using geoparquet with H3 resolution 3 (finer grid)[/]
+      [dim]# Example 3: Search using geoparquet with rustac engine and filters[/]
       $ itslive-search --bbox -50,65,-40,75 --engine rustac \\
-          --partition-type h3 --resolution 3 > urls.txt
+          --partition-type h3 --resolution 2 --filter platform:=:S2 > urls.txt
 
       [dim]# Example 4: Search using geoparquet with lat/lon geographic partitioning[/]
       $ itslive-search --bbox -50,65,-40,75 --engine duckdb \\

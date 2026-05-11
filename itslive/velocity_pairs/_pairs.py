@@ -40,7 +40,7 @@ def find(
         max_interval: Maximum time interval in days
         engine: Query backend:
             - "stac": STAC API (default)
-              Catalog: https://stac.its-live.org
+              Catalog: https://stac.itslive.cloud
             - "duckdb": geoparquet with duckdb
               Catalog: Must specify via base_catalog_href or partition_type+resolution
             - "rustac": geoparquet with rustac
@@ -123,7 +123,7 @@ def find_streaming(
         max_interval: Maximum time interval in days
         engine: Query backend:
             - "stac": STAC API (default)
-              Catalog: https://stac.its-live.org
+              Catalog: https://stac.itslive.cloud
             - "duckdb": geoparquet with duckdb
               Catalog: Must specify via base_catalog_href or partition_type+resolution
             - "rustac": geoparquet with rustac
@@ -233,7 +233,7 @@ def find_streaming(
                 if resolution not in [1, 2]:
                     raise ValueError(
                         f"Invalid H3 resolution: {resolution}. "
-                        "Only resolutions 1 (finer) and 2 (coarser) are available."
+                        "Only resolutions 1 (coarser) and 2 (finer) are available."
                     )
                 # H3 hexagonal partitioning: h3r{resolution}
                 default_catalog = (
