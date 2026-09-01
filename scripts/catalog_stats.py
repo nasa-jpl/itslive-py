@@ -97,6 +97,8 @@ def _query(
     con, globs: list[str], select: str, where: str, group_by: str, order_by: str
 ):
     """Run an aggregate query over the parquet globs and return list of dicts."""
+    import pyarrow as pa
+
     sql = (
         f"SELECT {select} {_from_clause(globs, 'filename' in select)} "
         f"{where} {group_by} {order_by}"
@@ -105,7 +107,11 @@ def _query(
     out = []
     if reader is None:
         return out
-    for rb in reader:
+    if isinstance(reader, pa.Table):
+        batches = reader.to_batches()
+    else:
+        batches = reader  # RecordBatchReader
+    for rb in batches:
         names = rb.schema.names
         cols = {name: rb.column(name).to_pylist() for name in names}
         n = len(cols[names[0]])

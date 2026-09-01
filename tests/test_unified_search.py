@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pyarrow as pa
 import pytest
 
 from itslive import search
@@ -327,6 +328,27 @@ class _FakeDuckdbConnection:
         return _Result()
 
 
+class _FakeDuckdbTableConnection:
+    """Like _FakeDuckdbConnection but .arrow() returns a real pyarrow.Table.
+
+    Reproduces duckdb versions where .arrow() returns a Table (iterating a
+    Table yields ChunkedArray columns, not RecordBatch).
+    """
+
+    executed = []
+
+    def execute(self, query):
+        _FakeDuckdbTableConnection.executed.append(query)
+
+        class _Result:
+            def arrow(self):
+                return pa.table(
+                    {"data_href": ["https://s3/x.nc", "https://s3/skip.tif"]}
+                )
+
+        return _Result()
+
+
 class TestServerlessDuckdb:
     @patch("duckdb.connect")
     def test_sql_contains_spatial_temporal_and_property_filters(
@@ -364,6 +386,27 @@ class TestServerlessDuckdb:
         assert tile_globs
         years = {q.split("year=")[1][:4] for q in tile_globs}
         assert years == {"2019", "2020", "2021", "2022"}
+
+    @patch("duckdb.connect")
+    def test_arrow_returns_pyarrow_table(self, mock_connect, monkeypatch):
+        """Regression: duckdb .arrow() returning a pyarrow.Table (its iteration
+        yields ChunkedArray columns, not RecordBatch) must still work."""
+        monkeypatch.setattr("itslive._search.path_exists", lambda _: True)
+        con = _FakeDuckdbTableConnection()
+        mock_connect.return_value = con
+        _FakeDuckdbTableConnection.executed = []
+
+        with patch("h3.h3shape_to_cells_experimental") as mock_cells:
+            mock_cells.return_value = ["8001fffffffffff"]
+            urls = search(
+                bbox=[-50, 65, -40, 75],
+                start="2020-01-01",
+                end="2020-12-31",
+                type="serverless",
+                engine="duckdb",
+            )
+
+        assert urls == ["https://s3/x.nc"]
 
     @patch("duckdb.connect")
     def test_legacy_catalog_has_no_year_globs(self, mock_connect, monkeypatch):

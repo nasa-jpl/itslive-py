@@ -624,6 +624,7 @@ def _iter_duckdb(
     no pandas materialization); hrefs are yielded as each batch arrives.
     """
     import duckdb
+    import pyarrow as pa
 
     con = duckdb.connect()
     con.execute("INSTALL spatial")
@@ -653,11 +654,17 @@ def _iter_duckdb(
             ) AND {temporal_sql} AND {filters_sql}
         """
         try:
-            # .arrow() returns a RecordBatchReader (a Table also iterates batches).
-            batches = con.execute(query).arrow()
+            result = con.execute(query).arrow()
         except duckdb.IOException:
             logging.debug(f"No parquet files matched under {prefix}, skipping.")
             continue
+        # duckdb's .arrow() returns a RecordBatchReader on some versions and a
+        # pyarrow Table on others. A Table iterates over columns (ChunkedArray),
+        # so normalize to RecordBatches explicitly.
+        if isinstance(result, pa.Table):
+            batches = result.to_batches()
+        else:
+            batches = result  # RecordBatchReader
         count = 0
         for record_batch in batches:
             hrefs = record_batch.column("data_href").to_pylist()

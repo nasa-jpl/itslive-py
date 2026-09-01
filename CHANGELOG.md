@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.4] - 2026-09-01
+
+* bug fixes
+    * fixed `AttributeError: 'ChunkedArray' object has no attribute 'column'` in the duckdb serverless path: `duckdb`'s `.arrow()` returns a `RecordBatchReader` on some versions and a `pyarrow.Table` on others, and iterating a `Table` yields `ChunkedArray` columns rather than `RecordBatch`. Results are now normalized to record batches explicitly, so searches work across duckdb versions.
+    * applied the same fix to the `.arrow()` iteration in `scripts/catalog_stats.py`.
+
 ## [0.7.3] - 2026-09-01
 
 * bug fixes
