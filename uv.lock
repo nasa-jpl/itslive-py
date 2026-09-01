@@ -1624,9 +1624,10 @@ wheels = [
 
 [[package]]
 name = "itslive"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "." }
 dependencies = [
+    { name = "arro3-core" },
     { name = "boto3" },
     { name = "duckdb" },
     { name = "earthaccess", version = "0.17.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -1651,9 +1652,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-arrow = [
-    { name = "arro3-core" },
-]
 dev = [
     { name = "black" },
     { name = "isort" },
@@ -1680,7 +1678,7 @@ notebooks = [
 
 [package.metadata]
 requires-dist = [
-    { name = "arro3-core", marker = "extra == 'arrow'", specifier = ">=0.6" },
+    { name = "arro3-core", specifier = ">=0.6" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=22.3.0" },
     { name = "boto3", specifier = ">=1.28" },
     { name = "duckdb", specifier = ">=0.8" },
@@ -1718,7 +1716,7 @@ requires-dist = [
     { name = "xarray", specifier = ">=2022.6" },
     { name = "zarr", specifier = ">=2.12" },
 ]
-provides-extras = ["arrow", "notebooks", "dev", "docs"]
+provides-extras = ["notebooks", "dev", "docs"]
 
 [[package]]
 name = "jedi"

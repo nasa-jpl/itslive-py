@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1] - 2026-09-01
+
+* bug fixes
+    * fixed rustac searches returning zero results: rustac returns each item's `assets` field as a JSON string, so the previous per-item parsing raised `AttributeError`, which was swallowed and produced empty results for regions like Karakoram/Shishper (issue #10)
+    * `arro3-core` is now a core dependency (it was an optional `[arrow]` extra), so the rustac `search_to_arrow` fast path is always available; per-prefix failures now log a warning instead of silently returning nothing
+* features
+    * new `notebooks/search_patterns.ipynb` documenting the STAC (pgstac), duckdb, and rustac search backends, streaming, filters, and manual pagination over results
+
 ## [0.7.0] - 2026-09-01
 
 * features

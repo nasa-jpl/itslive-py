@@ -646,9 +646,9 @@ def _iter_rustac(
 ):
     """Yield data asset hrefs by searching geoparquet prefixes with rustac.
 
-    Uses ``search_to_arrow`` (constant-memory record batches) when the
-    optional ``arro3-core`` dependency is installed; falls back to the
-    JSON ``search`` API otherwise.
+    Uses ``search_to_arrow`` (constant-memory record batches; ``arro3-core``
+    is a core dependency). rustac returns the ``assets`` field as a JSON
+    string, so it is parsed per item.
     """
     from typing import Any, cast
 
@@ -663,37 +663,33 @@ def _iter_rustac(
     if cql2_filter is not None:
         search_kwargs["filter"] = cql2_filter
 
-    try:
-        import arro3.core  # pyright: ignore[reportMissingImports]  # noqa: F401
-
-        use_arrow = True
-    except ImportError:
-        use_arrow = False
+    def _hrefs(assets: Any):
+        """Yield matching data asset hrefs from a single item's assets."""
+        assets = json.loads(assets) if isinstance(assets, str) else assets
+        for asset in assets.values():
+            if "data" in (asset.get("roles") or []) and asset["href"].endswith(
+                asset_type
+            ):
+                yield asset["href"]
 
     for prefix in prefixes:
         count = 0
         try:
-            if use_arrow:
-                table = cast(Any, client.search_to_arrow(prefix, **search_kwargs))
-                for batch in table.to_batches():
-                    for item_json in batch.column("assets").to_pylist():
-                        for asset in json.loads(item_json).values():
-                            if "data" in (asset.get("roles") or []) and asset[
-                                "href"
-                            ].endswith(asset_type):
-                                count += 1
-                                yield asset["href"]
-            else:
-                for raw in client.search(prefix, **search_kwargs):
-                    item = json.loads(raw) if isinstance(raw, str) else raw
-                    for asset in item["assets"].values():
-                        if "data" in (asset.get("roles") or []) and asset[
-                            "href"
-                        ].endswith(asset_type):
-                            count += 1
-                            yield asset["href"]
-        except Exception:
-            logging.debug(f"No items returned for {prefix}, skipping.")
+            table = cast(Any, client.search_to_arrow(prefix, **search_kwargs))
+            if table is None:
+                # No parquet files matched this prefix (e.g. empty year/tile).
+                logging.info(f"Prefix: {prefix} items found: 0")
+                continue
+            for batch in table.to_batches():
+                for item_json in batch.column("assets").to_pylist():
+                    for href in _hrefs(item_json):
+                        count += 1
+                        yield href
+        except Exception as e:
+            logging.warning(
+                f"rustac search failed for {prefix} ({type(e).__name__}: {e}); "
+                "skipping."
+            )
             continue
         logging.info(f"Prefix: {prefix} items found: {count}")
 
