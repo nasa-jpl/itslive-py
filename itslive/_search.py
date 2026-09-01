@@ -30,7 +30,21 @@ DEFAULT_STAC_API_HREF = "https://stac.itslive.cloud"
 WAREHOUSE_HREF = "s3://its-live-data/test-space/stac/catalog/warehouse"
 
 _MISSIONS = ("landsatOLI", "sentinel1", "sentinel2")
-_MISSION_TO_PLATFORM = {"sentinel1": "S1A", "sentinel2": "S2A", "landsatoli": "L8"}
+# mission -> platform values as stored in the STAC catalogs (pgstac and the
+# geoparquet warehouse use identical values). Note Landsat items use
+# "LC08"/"LC09" (L1TP) and "LO08"/"LO09" (L1GT), not "L8"/"L9".
+_MISSION_TO_PLATFORMS = {
+    "sentinel1": ["S1A", "S1B"],
+    "s1": ["S1A", "S1B"],
+    "sentinel2": ["S2A", "S2B"],
+    "s2": ["S2A", "S2B"],
+    "landsat": ["LC08", "LC09", "LO08", "LO09"],
+    "landsatoli": ["LC08", "LC09", "LO08", "LO09"],
+    "landsat8": ["LC08", "LO08"],
+    "l8": ["LC08", "LO08"],
+    "landsat9": ["LC09", "LO09"],
+    "l9": ["LC09", "LO09"],
+}
 
 # Default search window when start/end are not provided.
 DEFAULT_START_DATE = "2000-01-01"
@@ -160,6 +174,8 @@ def expr_to_sql(expr):
             if not prop.isidentifier():
                 return f'"{prop}"'
             return prop
+        elif isinstance(val, list):
+            return "(" + ", ".join(val_to_sql(v) for v in val) + ")"
         elif isinstance(val, str):
             escaped = val.replace("'", "''")
             return f"'{escaped}'"
@@ -178,6 +194,7 @@ def expr_to_sql(expr):
         "<": "<",
         "!=": "<>",
         "<>": "<>",
+        "in": "IN",
     }
     sql_op = op_map.get(op, op)
     return f"{left_sql} {sql_op} {right_sql}"
@@ -293,9 +310,15 @@ def build_search_filters(
     if percent_valid_pixels and percent_valid_pixels > 0:
         param_filters["percent_valid_pixels"] = GTE(percent_valid_pixels)
     if mission:
-        platform = _MISSION_TO_PLATFORM.get(mission.lower())
-        if platform:
-            param_filters["platform"] = EQ(platform)
+        platforms = _MISSION_TO_PLATFORMS.get(mission.lower())
+        if platforms:
+            if len(platforms) == 1:
+                param_filters["platform"] = EQ(platforms[0])
+            else:
+                # Compound expression: a dict cannot hold duplicate keys.
+                extra_cql2_exprs.append(
+                    {"op": "in", "args": [{"property": "platform"}, platforms]}
+                )
     # STAC property for time separation is "date_dt" (not min/max_interval_days).
     if min_interval is not None and max_interval is not None:
         extra_cql2_exprs.append(
@@ -749,8 +772,13 @@ def search(
             found (suitable for 1M+ results). When False (default), return
             a sorted, deduplicated list.
         percent_valid_pixels: Minimum percent of valid pixels.
-        mission: Satellite mission (``"landsatOLI"``, ``"sentinel1"``,
-            ``"sentinel2"``); translated to a ``platform`` filter.
+        mission: Satellite mission; expanded to the catalog ``platform``
+            values, which are identical across pgstac and the geoparquet
+            warehouse. Supported values: ``"sentinel1"``/``"s1"`` (S1A, S1B),
+            ``"sentinel2"``/``"s2"`` (S2A, S2B), ``"landsat"``/``"landsatoli"``
+            (LC08, LC09, LO08, LO09), ``"landsat8"``/``"l8"``, and
+            ``"landsat9"``/``"l9"``. For per-platform precision use
+            ``filters={"platform": EQ("S1A")}`` instead.
         min_interval: Minimum time separation in days (``date_dt`` filter).
         max_interval: Maximum time separation in days.
         filters: Dict of property filters as ``{property: PropertyFilter}``;

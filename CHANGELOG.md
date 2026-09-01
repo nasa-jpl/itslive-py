@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2] - 2026-09-01
+
+* bug fixes
+    * fixed the `mission` filter expanding to the wrong `platform` values, so results were identical across backends only after the fix: `mission="sentinel2"` previously matched only `S2A` (missed `S2B`), and `mission="landsatoli"` matched `L8`/`L9`, which do not exist in the catalogs (Landsat items use `LC08`/`LC09` L1TP and `LO08`/`LO09` L1GT) and therefore returned zero results
+    * `mission` now expands to the exact platform values stored in both pgstac and the geoparquet warehouse, giving consistent results across `type="pgstac"`, `engine="duckdb"`, and `engine="rustac"`; added aliases `s1`, `s2`, `landsat`, `landsat8`/`l8`, `landsat9`/`l9`; use `filters={"platform": EQ("S1A")}` for per-platform precision
+    * added CQL2 `in` support to the SQL filter translator so multi-platform mission filters work on the duckdb backend
+
 ## [0.7.1] - 2026-09-01
 
 * bug fixes

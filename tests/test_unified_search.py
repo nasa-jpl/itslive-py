@@ -95,9 +95,25 @@ class TestBuildSearchFilters:
         filters, _ = build_search_filters(percent_valid_pixels=0)
         assert "percent_valid_pixels" not in filters
 
-    def test_mission_to_platform(self):
-        filters, _ = build_search_filters(mission="Sentinel1")
-        assert filters["platform"].value == "S1A"
+    def test_mission_to_platforms(self):
+        filters, extra = build_search_filters(mission="sentinel2")
+        assert "platform" not in filters
+        assert {"op": "in", "args": [{"property": "platform"}, ["S2A", "S2B"]]} in extra
+
+    def test_landsat_mission_uses_lc_platforms(self):
+        filters, extra = build_search_filters(mission="landsatoli")
+        assert "platform" not in filters
+        assert {
+            "op": "in",
+            "args": [{"property": "platform"}, ["LC08", "LC09", "LO08", "LO09"]],
+        } in extra
+
+    def test_mission_alias_l8(self):
+        filters, extra = build_search_filters(mission="l8")
+        assert {
+            "op": "in",
+            "args": [{"property": "platform"}, ["LC08", "LO08"]],
+        } in extra
 
     def test_min_and_max_interval_compound(self):
         filters, extra = build_search_filters(min_interval=7, max_interval=30)
