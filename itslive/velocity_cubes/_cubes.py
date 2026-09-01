@@ -109,7 +109,7 @@ def list_variables() -> None:
     rprint(table)
 
 
-def _merge_default_variables(variables: list[str]) -> set[str]:
+def _merge_default_variables(variables: list[str]) -> list[str]:
     _default_variables = [
         "v",
         "v_error",
@@ -123,10 +123,10 @@ def _merge_default_variables(variables: list[str]) -> set[str]:
     ]
     query_variables = set(_default_variables)
     query_variables.update(variables)
-    return query_variables
+    return sorted(query_variables)
 
 
-def _merge_default_composite_variables(variables: list[str]) -> set[str]:
+def _merge_default_composite_variables(variables: list[str]) -> list[str]:
     """Default variables for annual composite datasets."""
     _default_variables = [
         # Time-varying (per year)
@@ -164,7 +164,7 @@ def _merge_default_composite_variables(variables: list[str]) -> set[str]:
     ]
     query_variables = set(_default_variables)
     query_variables.update(variables)
-    return query_variables
+    return sorted(query_variables)
 
 
 def find(

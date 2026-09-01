@@ -1,10 +1,10 @@
-from typing import Any
+from typing import cast
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotext
 import xarray as xr
+from matplotlib.axes import Axes
 
 
 def plot_terminal(
@@ -65,8 +65,8 @@ def plot_terminal(
             continue
 
         # Convert to pandas and process
-        ts = dataset[variable].to_pandas().sort_index()
-        ts = ts[~ts.index.duplicated(keep="first")].resample("ME").max().ffill()
+        ts = cast(pd.Series, dataset[variable].to_pandas().sort_index())
+        ts = ts.loc[~ts.index.duplicated(keep="first")].resample("ME").max().ffill()
 
         date_strs = [d.strftime("%Y-%m-%d") for d in ts.index.to_pydatetime()]
         values = [float(v) for v in ts.values]
@@ -88,19 +88,21 @@ def plot_terminal(
         tick_dates = [f"{y}-01-31" for y in range(min_year, max_year + 1, step)]
         tick_labels = [str(y) for y in range(min_year, max_year + 1, step)]
 
-        plotext.plotsize(120, 30)
-        plotext.date_form("Y-m-d")
-        plotext.xticks(tick_dates, tick_labels)
-        plotext.title(f"{title} | {subtitle}")
-        plotext.ylabel(var_labels.get(variable, variable))
-        plotext.xlabel("Date")
+        plotext.plotsize(120, 30)  # type: ignore[attr-defined]
+        plotext.date_form("Y-m-d")  # type: ignore[attr-defined]
+        plotext.xticks(tick_dates, tick_labels)  # type: ignore[attr-defined]
+        plotext.title(f"{title} | {subtitle}")  # type: ignore[attr-defined]
+        plotext.ylabel(var_labels.get(variable, variable))  # type: ignore[attr-defined]
+        plotext.xlabel("Date")  # type: ignore[attr-defined]
 
         # Plot with different colors if multiple variables — use date strings
         # so plotext's native date axis handles tick spacing correctly
         color = plot_colors[var_idx % len(plot_colors)] if len(variables) > 1 else "red"
-        plotext.plot(date_strs, values, marker="braille", color=color, label=variable)
+        plotext.plot(  # type: ignore[attr-defined]
+            date_strs, values, marker="braille", color=color, label=variable
+        )
 
-        plotext.show()
+        plotext.show()  # type: ignore[attr-defined]
 
         # Add statistics after the plot (filter out NaN values)
         valid_values = [v for v in values if not pd.isna(v)]
@@ -127,10 +129,10 @@ def plot_terminal(
 def _plot_by_location(
     lon: float,
     lat: float,
-    ax: plt.Axes,
+    ax: Axes,
     dataset: xr.Dataset,
     variable: str = "v",
-) -> None:
+) -> Axes:
     dt = dataset["date_dt"].values
     dt = dt.astype(float) * 1.15741e-14
 
@@ -146,10 +148,10 @@ def _plot_by_location(
 def _plot_by_sensor(
     lon: float,
     lat: float,
-    ax: plt.Axes,
+    ax: Axes,
     dataset: xr.Dataset,
     variable: str = "v",
-) -> None:
+) -> Axes:
     sats = np.unique(dataset["satellite_img1"].values)
     sat_plotsym_dict = {
         "1": "r+",
@@ -193,11 +195,11 @@ def _plot_by_sensor(
 def plot_variable(
     lon: float,
     lat: float,
-    ax: plt.Axes,
+    ax: Axes,
     dataset: xr.Dataset,
     variable: str = "v",
     label_by: str = "location",
-) -> Any:
+) -> Axes:
     """ """
     if label_by == "location":
         return _plot_by_location(lon, lat, ax, dataset, variable)

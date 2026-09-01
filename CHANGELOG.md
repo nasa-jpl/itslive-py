@@ -1,6 +1,28 @@
 # Changelog
 
-## [Unreleased]
+## [0.7.0] - 2026-09-01
+
+* features
+    * new unified `itslive.search(...)` API with `type="serverless"` (STAC geoparquet via duckdb/rustac) and `type="pgstac"` (STAC API via pystac-client); `stream=True` yields hrefs for 1M+ result sets; filter helpers (`EQ`, `GTE`, `LTE`, `GT`, `LT`, `NEQ`, `PropertyFilter`) exported at the top level (`from itslive import EQ, search`)
+    * new default serverless catalog `s3://its-live-data/test-space/stac/catalog/warehouse` (overridable via `base_catalog_href`); date range is pushed down to `year=` Hive partitions on the warehouse layout for faster temporal pruning
+    * duckdb reads stream results as Arrow record batches (constant memory, no pandas materialization) and set `preserve_insertion_order=false`
+    * rustac upgraded to the 0.9.x API (items parsed from JSON strings, fixed broken engine); optional `arro3-core` (`[arrow]` extra) enables the `search_to_arrow` fast path with a JSON fallback
+    * CLI: new `--type {serverless,pgstac}` flag (inferred from `--engine` when omitted); `--use-hive-partitions` now defaults to on
+* bug fixes
+    * duckdb now `INSTALL`/`LOAD httpfs` explicitly (previously relied on auto-install, which could hang on S3 reads)
+    * pgstac searches sent no `limit`, forcing the API's default 10-item pages (thousands of round-trips for large queries); now defaults to `limit=10000`; bare `datetime` values are normalized to full UTC timestamps (some pgstac deployments reject them)
+    * CLI `--count-only` printed nothing with the default `url` format; empty-result CSV counting referenced an unbound variable
+    * `find_streaming` now validates the engine eagerly so bad arguments raise at call time instead of on first iteration
+* breaking changes
+    * the `itslive.search` module is renamed to `itslive._search`; `from itslive.search import EQ` must become `from itslive import EQ` (filter helpers and `search()` are exported from the top level)
+    * `serverless_search` is deprecated in favor of `search(type="serverless", ...)`
+    * the default geoparquet catalog changed from the legacy `h3r1`/`h3r2` paths to the warehouse, which only provides H3 resolution 1 — pass `base_catalog_href` explicitly to query legacy stores
+* maintenance
+    * `find`/`find_streaming` are now thin wrappers over `search()`, removing ~200 lines of duplicated STAC/geoparquet logic
+    * added `pyrightconfig.json` and fixed 22 pre-existing type errors across the package and tests
+    * raised the `rustac` floor to `>=0.9` and added the optional `arrow` extra (`arro3-core`)
+    * Python floor raised to `>=3.11` (required by rustac 0.9.x); CI matrix updated accordingly
+    * moved `jupyterlab` out of core dependencies into the optional `notebooks` extra
 
 ## [0.6.1] - 2026-05-11
 

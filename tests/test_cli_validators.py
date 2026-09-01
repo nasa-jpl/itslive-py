@@ -97,6 +97,7 @@ class TestValidateFilter:
 
     def test_equals_filter(self):
         result = validate_filter(FakeContext(), None, ("platform:=:S2",))
+        assert result is not None
         assert len(result) == 1
         prop, pf = result[0]
         assert prop == "platform"
@@ -105,6 +106,7 @@ class TestValidateFilter:
 
     def test_gte_filter_numeric(self):
         result = validate_filter(FakeContext(), None, ("percent_valid_pixels:>=:85",))
+        assert result is not None
         prop, pf = result[0]
         assert prop == "percent_valid_pixels"
         assert pf.op == ">="
@@ -112,23 +114,27 @@ class TestValidateFilter:
 
     def test_gte_filter_float(self):
         result = validate_filter(FakeContext(), None, ("percent_valid_pixels:>=:85.5",))
+        assert result is not None
         prop, pf = result[0]
         assert pf.value == 85.5
 
     def test_lt_filter(self):
         result = validate_filter(FakeContext(), None, ("count:<:100",))
+        assert result is not None
         prop, pf = result[0]
         assert pf.op == "<"
         assert pf.value == 100
 
     def test_neq_filter(self):
         result = validate_filter(FakeContext(), None, ("version:!=:002",))
+        assert result is not None
         prop, pf = result[0]
         assert pf.op == "!="
         assert pf.value == "002"
 
     def test_colon_in_property_name(self):
         result = validate_filter(FakeContext(), None, ("proj:code:=:EPSG:3413",))
+        assert result is not None
         prop, pf = result[0]
         assert prop == "proj:code"
         assert pf.value == "EPSG:3413"
@@ -139,6 +145,7 @@ class TestValidateFilter:
             None,
             ("platform:=:S2", "version:!=:002"),
         )
+        assert result is not None
         assert len(result) == 2
 
     def test_invalid_operator(self):

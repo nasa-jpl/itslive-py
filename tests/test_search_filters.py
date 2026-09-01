@@ -1,6 +1,6 @@
 import pytest
 
-from itslive.search import (
+from itslive._search import (
     EQ,
     GT,
     GTE,

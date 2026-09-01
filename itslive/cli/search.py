@@ -6,8 +6,8 @@ import sys
 import rich_click as click
 from rich import print as rprint
 
+from itslive._search import EQ, GT, GTE, LT, LTE, NEQ
 from itslive.cli._shared import Mutex
-from itslive.search import EQ, GT, GTE, LT, LTE, NEQ
 
 # Use Rich markup
 click.rich_click.USE_RICH_MARKUP = True
@@ -168,7 +168,19 @@ def validate_filter(ctx, param, value):
     help=(
         "Search engine backend. "
         "[dim]stac: STAC API (default) - uses https://stac.itslive.cloud[/] "
-        "[dim]duckdb/rustac: Geoparquet with S3 - must specify --base-catalog-href[/]"
+        "[dim]duckdb/rustac: Geoparquet with S3[/]"
+    ),
+)
+@click.option(
+    "--type",
+    "catalog_type",
+    type=click.Choice(["serverless", "pgstac"], case_sensitive=False),
+    default=None,
+    help=(
+        "Search backend type. "
+        "[dim]serverless: query geoparquet directly from S3 (uses --engine)[/] "
+        "[dim]pgstac: STAC API via pystac-client[/] "
+        "[dim]If omitted, inferred from --engine (stac -> pgstac, duckdb/rustac -> serverless)[/]"
     ),
 )
 @click.option(
@@ -250,9 +262,10 @@ def validate_filter(ctx, param, value):
     help="Pre-filter geoparquet files to overlapping spatial partitions [dim](speeds up large queries)[/]",
 )
 @click.option(
-    "--use-hive-partitions",
-    is_flag=True,
-    help="Use Hive-style partition paths instead of integer prefixes",
+    "--use-hive-partitions/--no-use-hive-partitions",
+    default=True,
+    show_default=True,
+    help="Use Hive-style partition paths [dim](disable for legacy integer-prefix layouts)[/]",
 )
 @click.option(
     "--filter",
@@ -287,6 +300,7 @@ def search(
     bbox,
     polygon,
     engine,
+    catalog_type,
     collection,
     percent_valid_pixels,
     mission,
@@ -316,15 +330,14 @@ def search(
       [dim]# Example 1: Search using STAC API (default)[/]
       $ itslive-search --bbox -50,65,-40,75 --start 2020-01-01 --end 2022-12-31 > urls.txt
 
-      [dim]# Example 2: Search using geoparquet with H3 hexagonal partitioning (resolution 2)[/]
-      $ itslive-search --bbox -50,65,-40,75 --engine duckdb \\
-          --partition-type h3 --resolution 2 > urls.txt
+      [dim]# Example 2: Search geoparquet serverless with duckdb (warehouse catalog)[/]
+      $ itslive-search --bbox -50,65,-40,75 --engine duckdb > urls.txt
 
-      [dim]# Example 3: Search using geoparquet with rustac engine and filters[/]
+      [dim]# Example 3: Search geoparquet with rustac engine and filters[/]
       $ itslive-search --bbox -50,65,-40,75 --engine rustac \\
-          --partition-type h3 --resolution 2 --filter platform:=:S2 > urls.txt
+          --partition-type h3 --filter platform:=:S2 > urls.txt
 
-      [dim]# Example 4: Search using geoparquet with lat/lon geographic partitioning[/]
+      [dim]# Example 4: Search geoparquet with lat/lon geographic partitioning[/]
       $ itslive-search --bbox -50,65,-40,75 --engine duckdb \\
           --partition-type latlon --base-catalog-href \\
           s3://its-live-data/test-space/stac/geoparquet/latlon > urls.txt
@@ -337,6 +350,19 @@ def search(
       $ itslive-search --bbox -50,65,-40,75 --count-only
     """
     import itslive
+
+    # Resolve backend type: explicit --type wins, otherwise infer from --engine
+    if catalog_type is None:
+        search_type = "pgstac" if engine == "stac" else "serverless"
+    else:
+        search_type = catalog_type.lower()
+        if search_type == "serverless" and engine == "stac":
+            raise click.BadParameter(
+                "--engine stac is only valid with --type pgstac; "
+                "use --engine duckdb or rustac for serverless search"
+            )
+    # find_streaming expects the legacy engine parameter
+    find_engine = "stac" if search_type == "pgstac" else engine
 
     # Build custom filters dict from --filter options
     custom_filters = {}
@@ -381,7 +407,7 @@ def search(
         end=end,
         min_interval=min_interval,
         max_interval=max_interval,
-        engine=engine,
+        engine=find_engine,
         **stac_kwargs,
     )
 
@@ -401,21 +427,22 @@ def search(
 
     elif format == "csv":
         writer = None
-        for i, url in enumerate(url_generator):
+        csv_count = 0
+        for url in url_generator:
+            csv_count += 1
             if count_only:
-                pass
-            else:
-                # Extract filename from URL
-                filename = url.split("/")[-1]
+                continue
+            # Extract filename from URL
+            filename = url.split("/")[-1]
 
-                if writer is None:
-                    writer = csv.writer(sys.stdout)
-                    writer.writerow(["url", "filename"])
+            if writer is None:
+                writer = csv.writer(sys.stdout)
+                writer.writerow(["url", "filename"])
 
-                writer.writerow([url, filename])
+            writer.writerow([url, filename])
 
-        if count_only and url_generator:
-            print(i + 1)
+        if count_only:
+            print(csv_count)
 
     else:  # url format (default)
         count = 0
@@ -424,5 +451,7 @@ def search(
             if not count_only:
                 print(url)
 
-        if not quiet:
+        if count_only:
+            print(count)
+        elif not quiet:
             rprint(f"[green]Total URLs: {count}[/]")

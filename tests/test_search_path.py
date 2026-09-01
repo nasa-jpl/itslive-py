@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from itslive.search import path_exists
+from itslive._search import path_exists
 
 
 class TestPathExists:

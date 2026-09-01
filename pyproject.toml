@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "itslive"
-version = "0.6.1"
+version = "0.7.0"
 description = "Python client for ITSLIVE glacier velocity data"
 authors = [{name = "Luis Lopez", email = "luis.lopez@nsidc.org"}]
 license = {text = "GPL-3.0-only"}
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 homepage = "https://github.com/nasa-jpl/itslive-py"
 dependencies = [
     "boto3>=1.28",
@@ -24,7 +24,7 @@ dependencies = [
     "pyproj>=3.4",
     "requests>=2.28",
     "rich-click>=1.5",
-    "rustac>=0.6",
+    "rustac>=0.9",
     "s3fs>=2022.3",
     "Shapely>=2.0",
     "tabulate>=0.9",
@@ -33,6 +33,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+arrow = [
+    "arro3-core>=0.6",
+]
+notebooks = [
+    "jupyterlab>=4.6.3",
+]
 dev = [
     "black>=22.3.0",
     "isort>=5.10.1",
@@ -67,7 +73,7 @@ allow-direct-references = true
 
 [tool.ruff]
 line-length = 88
-target-version = "py310"
+target-version = "py311"
 exclude = ["notebooks/"]
 
 [tool.ruff.lint]
@@ -94,7 +100,7 @@ exclude_lines = [
 ]
 
 [tool.bumpversion]
-current_version = "0.6.1"
+current_version = "0.7.0"
 commit = true
 tag = true
 tag_name = "v{new_version}"
