@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.3] - 2026-09-01
+
+* bug fixes
+    * fixed serverless (duckdb/rustac) date-restricted searches silently dropping velocity pairs whose acquisition interval overlaps the query window but whose midpoint falls in an adjacent year: the `year=` Hive partition push-down only scanned `[start_year, end_year]`, while the temporal filter uses interval overlap. The partition range is now widened by one year on each side (the temporal WHERE clause still filters precisely, so results are correct and now match pgstac exactly).
+* maintenance
+    * added `scripts/catalog_stats.py`, a duckdb-based tool that streams stats directly from the geoparquet files (unique item count, by-year/platform/version distributions, monthly `created` timeline, top tiles) with an optional per-(year, platform) comparison against the live pgstac catalog (no hard-coded platform lists).
+
 ## [0.7.2] - 2026-09-01
 
 * bug fixes

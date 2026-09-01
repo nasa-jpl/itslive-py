@@ -172,10 +172,11 @@ class TestPrefixBuilding:
         prefixes = _build_search_prefixes(
             WAREHOUSE_HREF, roi, opts, "2020-01-01", "2022-06-30"
         )
-        assert len(prefixes) == 3
+        assert len(prefixes) == 5
         assert all("/year=" in p and p.endswith("/**/*.parquet") for p in prefixes)
+        assert any("year=2019" in p for p in prefixes)
         assert any("year=2020" in p for p in prefixes)
-        assert any("year=2022" in p for p in prefixes)
+        assert any("year=2023" in p for p in prefixes)
 
     def test_no_year_pushdown_for_legacy(self):
         opts = {
@@ -358,11 +359,11 @@ class TestServerlessDuckdb:
             assert "end_datetime >=" in q
             assert "T23:59:59Z" in q  # inclusive end bound
             assert '"proj:code" = ' in q or "proj:code" in q
-        # warehouse default: year push-down limits prefixes to the date range
+        # warehouse default: year push-down widened by one year on each side
         tile_globs = [q for q in queries if "year=" in q]
         assert tile_globs
         years = {q.split("year=")[1][:4] for q in tile_globs}
-        assert years == {"2020", "2021"}
+        assert years == {"2019", "2020", "2021", "2022"}
 
     @patch("duckdb.connect")
     def test_legacy_catalog_has_no_year_globs(self, mock_connect, monkeypatch):

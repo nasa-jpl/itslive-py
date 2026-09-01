@@ -538,7 +538,13 @@ def _build_search_prefixes(
         prefixes = [store]
 
     if opts["use_year_partitions"]:
-        years = range(int(start_date[:4]), int(end_date[:4]) + 1)
+        # The `year` Hive partition is the pair's midpoint year. Pairs whose
+        # acquisition interval overlaps the query window can have midpoints up
+        # to ~1 year outside it, so widen the year range by one year on each
+        # side; the temporal WHERE clause still filters precisely.
+        lo = int(start_date[:4]) - 1
+        hi = int(end_date[:4]) + 1
+        years = range(lo, hi + 1)
         return [f"{p}/year={y}/**/*.parquet" for p in prefixes for y in years]
     return [f"{p}/**/*.parquet" for p in prefixes]
 
