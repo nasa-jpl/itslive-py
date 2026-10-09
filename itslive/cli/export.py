@@ -94,7 +94,7 @@ def export(input_coordinates, lat, lon, variables, outdir, format, debug):
         for index, row in input_coordinates.iterrows():
             points.append((row["lon"], row["lat"]))
     else:
-        if lat and lon:
+        if lat is not None and lon is not None:
             points.append((lon, lat))
 
     if len(points) and format is not None:
